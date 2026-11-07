@@ -28,7 +28,7 @@ const KIND_META: Record<string, { icon: React.ComponentType<{ className?: string
   SYSTEM: { icon: Info, cls: "bg-muted text-muted-foreground" },
 };
 
-/** Куда ведёт уведомление внутри SPA (из «link» старого формата). */
+/** Куда ведёт уведомление внутри SPA (из "link" старого формата). */
 function linkToSection(link: string | null): string | null {
   if (!link) return null;
   if (link.startsWith("/schedule")) return "schedule";

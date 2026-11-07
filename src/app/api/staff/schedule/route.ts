@@ -102,14 +102,14 @@ export async function POST(req: NextRequest) {
 
   let message = "";
   if (kind === "CANCELLED") {
-    message = `Занятие «${subject}» ${humanDate(date, { withWeekday: true })} отменено.`;
+    message = `Занятие "${subject}" ${humanDate(date, { withWeekday: true })} отменено.`;
   } else if (kind === "MOVED") {
     if (!newDate) return NextResponse.json({ error: "Укажите дату, на которую переносится пара" }, { status: 400 });
     const t = newStartMin ? minutesToHHMM(newStartMin) : "09:00";
-    message = `Занятие «${subject}» ${humanDate(date, { short: true })} перенесено на ${humanDate(newDate, { short: true })}, ${t}${newRoom ? `, ауд. ${newRoom}` : ""}.`;
+    message = `Занятие "${subject}" ${humanDate(date, { short: true })} перенесено на ${humanDate(newDate, { short: true })}, ${t}${newRoom ? `, ауд. ${newRoom}` : ""}.`;
   } else {
     if (!newRoom) return NextResponse.json({ error: "Укажите новую аудиторию" }, { status: 400 });
-    message = `Занятие «${subject}» ${humanDate(date, { short: true })} пройдёт в ауд. ${newRoom}.`;
+    message = `Занятие "${subject}" ${humanDate(date, { short: true })} пройдёт в ауд. ${newRoom}.`;
   }
   if (reason) message += ` Причина: ${reason}.`;
 

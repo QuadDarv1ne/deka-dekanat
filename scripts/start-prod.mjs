@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Production-лаунчер «Деки»: самодостаточный старт в любой среде.
+ * Production-лаунчер "Деки": самодостаточный старт в любой среде.
  *
  * Зачем: платформа деплоя (как и голый сервер/CI) не знает про песочницу, где
  * собирался проект. При деплое нет ни .env (он gitignored), ни файла базы
  * db/custom.db (тоже gitignored), а путь в .env — абсолютный. Раньше сервер
- * стартовал, но Prisma не находила DATABASE_URL → «/» отдавал 500 → health-check
- * деплоя падал («Sorry, there was a problem deploying the code»).
+ * стартовал, но Prisma не находила DATABASE_URL → "/" отдавал 500 → health-check
+ * деплоя падал ("Sorry, there was a problem deploying the code").
  *
  * Что делает:
  *  1. находит корень проекта и убеждается, что db/ существует;
@@ -19,7 +19,7 @@
  * Переменные окружения (все необязательные):
  *  PORT        — порт сервера (по умолчанию 3000, платформа подставляет свою);
  *  DATABASE_URL — если задан, используется как есть (docker-compose, Docker);
- *  DEKA_SKIP_SEED — «1» запрещает автосев (схема всё равно применяется).
+ *  DEKA_SKIP_SEED — "1" запрещает автосев (схема всё равно применяется).
  */
 
 import { spawn, spawnSync } from "node:child_process";
@@ -77,7 +77,7 @@ if (!existsSync(dbFile)) {
 // ── 4. Запуск standalone-сервера ─────────────────────────────────────────────
 if (!existsSync(serverJs)) {
   console.error(
-    "[deka-start] не найден .next/standalone/server.js — сначала выполните «npm run build»."
+    "[deka-start] не найден .next/standalone/server.js — сначала выполните \"npm run build\"."
   );
   process.exit(1);
 }

@@ -314,7 +314,7 @@ export function StudentRequests({
                         <li key={h.id} className="text-[11.5px] text-muted-foreground">
                           <span className="font-medium text-foreground">{REQUEST_STATUS[h.status]?.label ?? h.status}</span> ·{" "}
                           {formatDateTimeSafe(h.createdAt)} · {h.authorName}
-                          {h.comment && <span className="block pl-0.5 italic">«{h.comment}»</span>}
+                          {h.comment && <span className="block pl-0.5 italic">"{h.comment}"</span>}
                         </li>
                       ))}
                     </ul>

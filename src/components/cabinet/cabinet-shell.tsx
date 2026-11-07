@@ -61,7 +61,7 @@ function initials(name: string): string {
   return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}` : name.slice(0, 2);
 }
 
-/** Внешний «сторож» статуса сети: подписка на события online/offline. */
+/** Внешний "сторож" статуса сети: подписка на события online/offline. */
 function subscribeOnline(onChange: () => void) {
   window.addEventListener("online", onChange);
   window.addEventListener("offline", onChange);
@@ -91,7 +91,7 @@ export function CabinetShell({ user, section, onNavigate, unread, onOpenNotifica
   // поэтому гидратация не ломается, даже если страница открылась без сети.
   // (снапшоты-примитивы стабильны сами по себе)
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
-  // «Данные показаны из сохранённого слепка» — сервер недоступен, но кабинет работает.
+  // "Данные показаны из сохранённого слепка" — сервер недоступен, но кабинет работает.
   // Серверный снапшот — стабильная константа из use-api (иначе React уходит в бесконечный рендер).
   const fallback = useSyncExternalStore(subscribeFallback, getFallbackSnapshot, getServerFallbackSnapshot);
   const offlineMode = !online || fallback.active;
@@ -191,7 +191,7 @@ export function CabinetShell({ user, section, onNavigate, unread, onOpenNotifica
             </Button>
           </div>
           <p className="px-2 text-[10px] leading-snug text-muted-foreground/70">
-            Концепт для конкурса «Цифровой деканат будущего». Не официальный сервис вуза. Данные вымышленные.
+            Концепт для конкурса "Цифровой деканат будущего". Не официальный сервис вуза. Данные вымышленные.
           </p>
         </div>
       </aside>

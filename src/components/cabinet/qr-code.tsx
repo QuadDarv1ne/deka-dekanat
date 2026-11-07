@@ -6,7 +6,7 @@ import { Download } from "lucide-react";
 
 /**
  * QR-код на базе пакета qrcode (генерация локально в браузере, без внешних сервисов).
- * Если передан fileName — под кодом появляется кнопка «Скачать PNG».
+ * Если передан fileName — под кодом появляется кнопка "Скачать PNG".
  */
 export function QRCodeSVG({ value, size = 160, fileName }: { value: string; size?: number; fileName?: string }) {
   const [src, setSrc] = useState<string | null>(null);

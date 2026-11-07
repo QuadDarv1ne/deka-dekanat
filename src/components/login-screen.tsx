@@ -170,7 +170,7 @@ export function LoginScreen() {
       </div>
 
       <p className="px-6 pb-6 text-center text-[11px] leading-relaxed text-muted-foreground lg:absolute lg:bottom-3 lg:right-4 lg:px-0">
-        Концепт для конкурса «Цифровой деканат будущего». Не является официальным сервисом вуза.
+        Концепт для конкурса "Цифровой деканат будущего". Не является официальным сервисом вуза.
         Все ФИО, оценки и документы — вымышленные.
       </p>
     </div>

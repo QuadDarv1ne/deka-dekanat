@@ -4,7 +4,7 @@ import { requireStaff } from "@/lib/api-helpers";
 import { restoreBackupInto, validateBackupData } from "@/lib/backup-core";
 
 /**
- * Восстановление базы из полной резервной копии (файл формата «deka-backup»,
+ * Восстановление базы из полной резервной копии (файл формата "deka-backup",
  * который отдаёт GET /api/backup). Данные валидируются ДО транзакции; сама
  * замена идёт в одной транзакции — при любой ошибке база остаётся прежней.
  *
@@ -30,12 +30,12 @@ export async function POST(req: NextRequest) {
 
   if (body.format !== "deka-backup") {
     return NextResponse.json(
-      { error: "Это не резервная копия «Дека» (ожидался формат deka-backup). Личные данные студента (deka-personal-data) сюда не подходят." },
+      { error: "Это не резервная копия \"Дека\" (ожидался формат deka-backup). Личные данные студента (deka-personal-data) сюда не подходят." },
       { status: 400 }
     );
   }
   if (typeof body.version === "number" && body.version > 1) {
-    return NextResponse.json({ error: "Копия сделана более новой версией «Дека» — обновите приложение" }, { status: 400 });
+    return NextResponse.json({ error: "Копия сделана более новой версией \"Дека\" — обновите приложение" }, { status: 400 });
   }
   if (body.confirm !== "REPLACE") {
     return NextResponse.json({ error: "Нет подтверждения замены данных" }, { status: 400 });

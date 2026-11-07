@@ -131,7 +131,7 @@ export function StaffAnnouncements() {
           <div className="flex items-center justify-between gap-3">
             <label className="flex items-center gap-2 text-[13px] font-medium" htmlFor="ann-pinned">
               <Switch id="ann-pinned" checked={pinned} onCheckedChange={setPinned} />
-              Закрепить наверху («Важно»)
+              Закрепить наверху ("Важно")
             </label>
             <Button onClick={submit} disabled={!canSubmit} className="gap-1.5">
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}

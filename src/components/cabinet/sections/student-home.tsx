@@ -161,7 +161,7 @@ export function StudentHome({
           <EmptyState
             icon={CalendarDays}
             title={data?.today.isWeekend ? "Сегодня выходной" : "Сегодня пар нет"}
-            text="Можно выдохнуть. Расписание на другие дни — по кнопке «Вся неделя»."
+            text="Можно выдохнуть. Расписание на другие дни — по кнопке &quot;Вся неделя&quot;."
           />
         )}
       </section>

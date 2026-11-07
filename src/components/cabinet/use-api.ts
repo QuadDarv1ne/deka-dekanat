@@ -8,13 +8,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * Каждый успешный ответ сохраняется в localStorage устройства пользователя
  * (только его собственные данные). Если сервер недоступен — нет сети, сервер
  * лежит, — секция показывает последний сохранённый слепок: кабинет продолжает
- * работать даже без связи с «центром». Действия (отправка форм) по-прежнему
+ * работать даже без связи с "центром". Действия (отправка форм) по-прежнему
  * требуют сети и честно просят её дождаться.
  */
 
 const CACHE_PREFIX = "deka-cache:";
 
-// ── Глобальный стор «данные показаны из резервной копии» (для баннера оболочки)
+// ── Глобальный стор "данные показаны из резервной копии" (для баннера оболочки)
 type FallbackSnapshot = { active: boolean; since: number | null };
 let fallbackSnapshot: FallbackSnapshot = { active: false, since: null };
 const fallbackUrls = new Map<string, number>();
@@ -49,7 +49,7 @@ export function getFallbackSnapshot(): FallbackSnapshot {
  * На сервере офлайн-режима нет — гидратация не ломается.
  * ВАЖНО: useSyncExternalStore требует кешированный снапшот — один и тот же
  * объект на каждый вызов. Новый объект в return ломает React бесконечным
- * циклом рендера («getServerSnapshot should be cached»), поэтому это
+ * циклом рендера ("getServerSnapshot should be cached"), поэтому это
  * константа уровня модуля.
  */
 const SERVER_FALLBACK_SNAPSHOT: FallbackSnapshot = { active: false, since: null };

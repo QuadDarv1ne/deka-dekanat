@@ -1,5 +1,5 @@
 /*
- * Service worker прототипа «Дека».
+ * Service worker прототипа "Дека".
  * Активируется только в production-сборке (см. src/components/pwa-register.tsx).
  * Стратегии:
  *  — навигация (страницы): сеть → кэш → offline.html;

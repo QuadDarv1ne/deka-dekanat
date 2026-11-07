@@ -239,7 +239,7 @@ export function StaffSchedule() {
 
         <div className="mt-3.5 flex items-center justify-between gap-3">
           <p className="text-[11.5px] text-muted-foreground">
-            {selectedSlot ? `Изменение: «${selectedSlot.subjectName}», ${data?.humanDate}` : "Выберите занятие из списка выше"}
+            {selectedSlot ? `Изменение: "${selectedSlot.subjectName}", ${data?.humanDate}` : "Выберите занятие из списка выше"}
           </p>
           <Button onClick={submit} disabled={!canSubmit} className="gap-1.5">
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : kind === "CANCELLED" ? <CalendarX2 className="h-4 w-4" /> : <MoveRight className="h-4 w-4" />}

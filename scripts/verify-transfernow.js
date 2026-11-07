@@ -1,5 +1,5 @@
 /* Проверка ссылки TransferNow end-to-end: открыть /dl/, принять cookie-модалку,
- * убрать рекламные слои, нажать «Скачать файл», сохранить файл, сверить размер. */
+ * убрать рекламные слои, нажать "Скачать файл", сохранить файл, сверить размер. */
 const { chromium } = require("playwright-core");
 
 const EXEC = process.env.HOME + "/.cache/ms-playwright/chromium-1200/chrome-linux64/chrome";

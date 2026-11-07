@@ -1,4 +1,4 @@
-// Схема БД прототипа «Дека — цифровой деканат» (концепт для конкурса)
+// Схема БД прототипа "Дека — цифровой деканат" (концепт для конкурса)
 // Все данные в базе — вымышленные.
 
 generator client {
@@ -110,7 +110,7 @@ model ExamItem {
 model RequestType {
   id             String  @id @default(cuid())
   code           String  @unique
-  title          String // «Справка об обучении»
+  title          String // "Справка об обучении"
   description    String
   icon           String  @default("file-text")
   processingDays Int     @default(3) // срок изготовления в рабочих днях
@@ -174,7 +174,7 @@ model Notification {
   createdAt DateTime  @default(now())
 }
 
-// ───────────────────────── ИИ-ассистент «Дека» ─────────────────────────
+// ───────────────────────── ИИ-ассистент "Дека" ─────────────────────────
 
 model AssistantMessage {
   id        String   @id @default(cuid())

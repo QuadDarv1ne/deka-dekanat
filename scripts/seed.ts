@@ -1,9 +1,9 @@
 /**
- * Наполнение БД вымышленными данными для прототипа «Дека — цифровой деканат».
+ * Наполнение БД вымышленными данными для прототипа "Дека — цифровой деканат".
  * Запуск: bun scripts/seed.ts
  *
  * ВАЖНО: все ФИО, группы, аудитории, оценки и номера — вымышленные.
- * Даты генерируются относительно «сегодня» (Europe/Moscow, UTC+3 без перехода на летнее время),
+ * Даты генерируются относительно "сегодня" (Europe/Moscow, UTC+3 без перехода на летнее время),
  * чтобы прототип всегда выглядел живым.
  */
 import { PrismaClient } from '@prisma/client'
@@ -17,7 +17,7 @@ const RU_MONTHS = ['января', 'февраля', 'марта', 'апреля
 const mskNow = () => new Date(Date.now() + MSK_OFFSET)
 const addDays = (d: Date, days: number) => new Date(d.getTime() + days * 86400000)
 const isoDate = (d: Date) => d.toISOString().slice(0, 10)
-/** «6 ноября» — человекочитаемая дата для текстов уведомлений */
+/** "6 ноября" — человекочитаемая дата для текстов уведомлений */
 const humanDate = (d: Date) => `${d.getUTCDate()} ${RU_MONTHS[d.getUTCMonth()]}`
 const wdOf = (d: Date) => (d.getUTCDay() === 0 ? 7 : d.getUTCDay()) // 1..7
 const dateAt = (y: number, m: number, day: number) => new Date(Date.UTC(y, m, day, 12))
@@ -200,22 +200,22 @@ async function main() {
     {
       login: 'student1', subject: 'Математический анализ', teacher: 'Демидова Е. П.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 38, maxScore: 50, d: dateAt(acYear, 9, 8) },
-        { kind: 'Коллоквиум', title: 'Коллоквиум «Пределы и непрерывность»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 9, 24), comment: 'Отличный ответ у доски' },
+        { kind: 'Коллоквиум', title: 'Коллоквиум "Пределы и непрерывность"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 9, 24), comment: 'Отличный ответ у доски' },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 31, maxScore: 40, d: dateAt(acYear, 10, 28) },
       ],
     },
     {
       login: 'student1', subject: 'Алгоритмы и структуры данных', teacher: 'Мельник О. С.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 45, maxScore: 50, d: dateAt(acYear, 9, 10) },
-        { kind: 'Контрольная работа', title: 'КР «Сортировки и куча»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 9, 26) },
-        { kind: 'Лабораторные', title: 'Лаб. работа №3 «Хеш-таблицы»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 15) },
+        { kind: 'Контрольная работа', title: 'КР "Сортировки и куча"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 9, 26) },
+        { kind: 'Лабораторные', title: 'Лаб. работа №3 "Хеш-таблицы"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 15) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 34, maxScore: 40, d: dateAt(acYear, 10, 30) },
       ],
     },
     {
       login: 'student1', subject: 'Базы данных', teacher: 'Хайдаров Р. Р.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 44, maxScore: 50, d: dateAt(acYear, 9, 12) },
-        { kind: 'Лабораторные', title: 'Лаб. работа №2 «SQL: JOIN и агрегаты»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 8) },
+        { kind: 'Лабораторные', title: 'Лаб. работа №2 "SQL: JOIN и агрегаты"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 8) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 29, maxScore: 40, d: dateAt(acYear, 10, 29) },
       ],
     },
@@ -228,7 +228,7 @@ async function main() {
     {
       login: 'student1', subject: 'Веб-программирование', teacher: 'Полякова Д. А.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 47, maxScore: 50, d: dateAt(acYear, 9, 14) },
-        { kind: 'Проект', title: 'Проект «Одностраничник команды»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 12), comment: 'Лучший проект потока' },
+        { kind: 'Проект', title: 'Проект "Одностраничник команды"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 12), comment: 'Лучший проект потока' },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 33, maxScore: 40, d: dateAt(acYear, 10, 31) },
       ],
     },
@@ -242,14 +242,14 @@ async function main() {
     {
       login: 'student3', subject: 'Математический анализ', teacher: 'Демидова Е. П.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 33, maxScore: 50, d: dateAt(acYear, 9, 8) },
-        { kind: 'Коллоквиум', title: 'Коллоквиум «Пределы и непрерывность»', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 9, 24) },
+        { kind: 'Коллоквиум', title: 'Коллоквиум "Пределы и непрерывность"', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 9, 24) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 27, maxScore: 40, d: dateAt(acYear, 10, 28) },
       ],
     },
     {
       login: 'student3', subject: 'Алгоритмы и структуры данных', teacher: 'Мельник О. С.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 41, maxScore: 50, d: dateAt(acYear, 9, 10) },
-        { kind: 'Контрольная работа', title: 'КР «Сортировки и куча»', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 9, 26) },
+        { kind: 'Контрольная работа', title: 'КР "Сортировки и куча"', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 9, 26) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 30, maxScore: 40, d: dateAt(acYear, 10, 30) },
       ],
     },
@@ -268,7 +268,7 @@ async function main() {
     {
       login: 'student3', subject: 'Веб-программирование', teacher: 'Полякова Д. А.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 40, maxScore: 50, d: dateAt(acYear, 9, 14) },
-        { kind: 'Проект', title: 'Проект «Одностраничник команды»', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 10, 12) },
+        { kind: 'Проект', title: 'Проект "Одностраничник команды"', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 10, 12) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 28, maxScore: 40, d: dateAt(acYear, 10, 31) },
       ],
     },
@@ -282,14 +282,14 @@ async function main() {
     {
       login: 'student4', subject: 'Математический анализ', teacher: 'Демидова Е. П.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 26, maxScore: 50, d: dateAt(acYear, 9, 8) },
-        { kind: 'Коллоквиум', title: 'Коллоквиум «Пределы и непрерывность»', mark: '3', score: 3, maxScore: 5, d: dateAt(acYear, 9, 24) },
+        { kind: 'Коллоквиум', title: 'Коллоквиум "Пределы и непрерывность"', mark: '3', score: 3, maxScore: 5, d: dateAt(acYear, 9, 24) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 19, maxScore: 40, d: dateAt(acYear, 10, 28) },
       ],
     },
     {
       login: 'student4', subject: 'Алгоритмы и структуры данных', teacher: 'Мельник О. С.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 30, maxScore: 50, d: dateAt(acYear, 9, 10) },
-        { kind: 'Контрольная работа', title: 'КР «Сортировки и куча»', mark: '3', score: 3, maxScore: 5, d: dateAt(acYear, 9, 26) },
+        { kind: 'Контрольная работа', title: 'КР "Сортировки и куча"', mark: '3', score: 3, maxScore: 5, d: dateAt(acYear, 9, 26) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 21, maxScore: 40, d: dateAt(acYear, 10, 30) },
       ],
     },
@@ -308,7 +308,7 @@ async function main() {
     {
       login: 'student4', subject: 'Веб-программирование', teacher: 'Полякова Д. А.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 32, maxScore: 50, d: dateAt(acYear, 9, 14) },
-        { kind: 'Проект', title: 'Проект «Одностраничник команды»', mark: '3', score: 3, maxScore: 5, d: dateAt(acYear, 10, 12) },
+        { kind: 'Проект', title: 'Проект "Одностраничник команды"', mark: '3', score: 3, maxScore: 5, d: dateAt(acYear, 10, 12) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 22, maxScore: 40, d: dateAt(acYear, 10, 31) },
       ],
     },
@@ -322,14 +322,14 @@ async function main() {
     {
       login: 'student2', subject: 'Эконометрика', teacher: 'Гуревич Л. М.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 40, maxScore: 50, d: dateAt(acYear, 9, 9) },
-        { kind: 'Контрольная работа', title: 'КР «МНК и регрессия»', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 9, 30) },
+        { kind: 'Контрольная работа', title: 'КР "МНК и регрессия"', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 9, 30) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 28, maxScore: 40, d: dateAt(acYear, 10, 28) },
       ],
     },
     {
       login: 'student2', subject: 'Микроэкономика (продвинутый уровень)', teacher: 'Кузнецов А. В.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 43, maxScore: 50, d: dateAt(acYear, 9, 11) },
-        { kind: 'Эссе', title: 'Эссе «Теория игр на рынках»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 3) },
+        { kind: 'Эссе', title: 'Эссе "Теория игр на рынках"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 3) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 31, maxScore: 40, d: dateAt(acYear, 10, 29) },
       ],
     },
@@ -348,7 +348,7 @@ async function main() {
     {
       login: 'student2', subject: 'Финансовая математика', teacher: 'Гуревич Л. М.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 41, maxScore: 50, d: dateAt(acYear, 9, 17) },
-        { kind: 'Контрольная работа', title: 'КР «Аннуитеты»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 10) },
+        { kind: 'Контрольная работа', title: 'КР "Аннуитеты"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 10) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 30, maxScore: 40, d: dateAt(acYear, 10, 28) },
       ],
     },
@@ -362,14 +362,14 @@ async function main() {
     {
       login: 'student5', subject: 'Эконометрика', teacher: 'Гуревич Л. М.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 44, maxScore: 50, d: dateAt(acYear, 9, 9) },
-        { kind: 'Контрольная работа', title: 'КР «МНК и регрессия»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 9, 30) },
+        { kind: 'Контрольная работа', title: 'КР "МНК и регрессия"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 9, 30) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 33, maxScore: 40, d: dateAt(acYear, 10, 28) },
       ],
     },
     {
       login: 'student5', subject: 'Микроэкономика (продвинутый уровень)', teacher: 'Кузнецов А. В.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 42, maxScore: 50, d: dateAt(acYear, 9, 11) },
-        { kind: 'Эссе', title: 'Эссе «Теория игр на рынках»', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 10, 3) },
+        { kind: 'Эссе', title: 'Эссе "Теория игр на рынках"', mark: '4', score: 4, maxScore: 5, d: dateAt(acYear, 10, 3) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 29, maxScore: 40, d: dateAt(acYear, 10, 29) },
       ],
     },
@@ -388,7 +388,7 @@ async function main() {
     {
       login: 'student5', subject: 'Финансовая математика', teacher: 'Гуревич Л. М.', rows: [
         { kind: 'Модуль 1', title: 'Баллы за 1-й модуль', score: 45, maxScore: 50, d: dateAt(acYear, 9, 17) },
-        { kind: 'Контрольная работа', title: 'КР «Аннуитеты»', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 10) },
+        { kind: 'Контрольная работа', title: 'КР "Аннуитеты"', mark: '5', score: 5, maxScore: 5, d: dateAt(acYear, 10, 10) },
         { kind: 'Модуль 2', title: 'Баллы за 2-й модуль (текущие)', score: 35, maxScore: 40, d: dateAt(acYear, 10, 28) },
       ],
     },
@@ -499,7 +499,7 @@ async function main() {
   await makeRequest({
     login: 'student2', number: 'ЭК-2026-0043', typeCode: 'ZAV_PEREZACHET', typeTitle: 'Перезачёт дисциплин',
     status: 'IN_PROGRESS', createdDaysAgo: 6, dueInDays: 1,
-    comment: 'Прошёл «Теорию вероятностей» в колледже, программа совпадает. Приложил программу курса.',
+    comment: 'Прошёл "Теорию вероятностей" в колледже, программа совпадает. Приложил программу курса.',
     history: [
       { status: 'NEW', author: 'Соколов Д. А.', daysAgo: 6 },
       { status: 'IN_PROGRESS', author: 'Смирнова О. В.', daysAgo: 4, comment: 'Передано на кафедру финансов и учёта, ждём заключение.' },
@@ -545,7 +545,7 @@ async function main() {
     data: [
       {
         title: 'Открыта запись на элективы весеннего семестра',
-        body: 'Выберите элективы через личное заявление в разделе «Заявки» до 20 ноября. Кто не выберет — распределение автоматически по остатку мест.',
+        body: 'Выберите элективы через личное заявление в разделе "Заявки" до 20 ноября. Кто не выберет — распределение автоматически по остатку мест.',
         category: 'ОБЩЕЕ', audience: 'ALL', authorName: 'Учебное управление',
         pinned: true, deadline: addDays(today, 16), createdAt: addDays(today, -1),
       },
@@ -562,14 +562,14 @@ async function main() {
         createdAt: addDays(today, -1),
       },
       {
-        title: 'Хакатон «Цифровой кампус» — набираем команды',
+        title: 'Хакатон "Цифровой кампус" — набираем команды',
         body: '48 часов, 5 треков, призы от партнёров. Регистрация команд до конца недели. Участие засчитывается как практика по веб-программированию.',
         category: 'МЕРОПРИЯТИЕ', audience: 'ALL', authorName: 'Центр студенческих инициатив',
         deadline: addDays(today, 5), createdAt: addDays(today, -3),
       },
       {
         title: 'Порядок допуска к зимней сессии',
-        body: 'К сессии допускаются студенты без академических задолженностей за модуль 2. Расписание экзаменов появится в разделе «Успеваемость» → «Сессия» в середине декабря.',
+        body: 'К сессии допускаются студенты без академических задолженностей за модуль 2. Расписание экзаменов появится в разделе "Успеваемость" → "Сессия" в середине декабря.',
         category: 'СЕССИЯ', audience: 'ALL', authorName: 'Учебное управление',
         createdAt: addDays(today, -5),
       },
@@ -604,7 +604,7 @@ async function main() {
       },
       {
         userId: users['student1'], kind: 'DEADLINE', title: 'До дедлайна 5 дней',
-        body: 'Хакатон «Цифровой кампус»: регистрация команд закрывается в конце недели.',
+        body: 'Хакатон "Цифровой кампус": регистрация команд закрывается в конце недели.',
         link: '/notifications', createdAt: addDays(today, -3),
       },
       {

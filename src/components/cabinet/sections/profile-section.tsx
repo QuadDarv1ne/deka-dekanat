@@ -64,7 +64,7 @@ export function ProfileSection({
       .text()
       .then((text) => {
         const parsed = JSON.parse(text) as { format?: string; data?: { users?: unknown[] } };
-        if (parsed.format !== "deka-backup") throw new Error("Это не резервная копия «Дека» (формат deka-backup)");
+        if (parsed.format !== "deka-backup") throw new Error("Это не резервная копия \"Дека\" (формат deka-backup)");
         if (!Array.isArray(parsed.data?.users) || parsed.data.users.length === 0)
           throw new Error("В файле нет пользователей — файл повреждён");
         setPendingRestore({ name: file.name, body: parsed });
@@ -255,7 +255,7 @@ export function ProfileSection({
             <DatabaseBackup className="h-4.5 w-4.5 text-teal-600" /> Суверенитет данных деканата
           </h2>
           <p className="mt-1.5 text-[12.5px] leading-snug text-muted-foreground">
-            Вся база прототипа — один файл. «Полный бэкап» скачивает её целиком: пользователи, расписание,
+            Вся база прототипа — один файл. "Полный бэкап" скачивает её целиком: пользователи, расписание,
             заявки с историей, оценки, объявления. Пароли — только в виде bcrypt-хешей. Перенос на другой
             сервер: поднять приложение на новой машине и восстановить этот файл здесь — данные, связи и
             история статусов сохранятся.
@@ -307,7 +307,7 @@ export function ProfileSection({
           <Info className="h-4.5 w-4.5 text-primary" /> О прототипе
         </h2>
         <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
-          «Дека» — концепт цифрового деканата будущего, собранный командой для конкурса с помощью ИИ-ассистентов.
+          "Дека" — концепт цифрового деканата будущего, собранный командой для конкурса с помощью ИИ-ассистентов.
           Это не официальный сервис университета: все ФИО, группы, оценки и документы вымышлены.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -356,7 +356,7 @@ export function ProfileSection({
               Заменить все данные?
             </DialogTitle>
             <DialogDescription>
-              Файл «{pendingRestore?.name}» заменит содержимое всей базы: пользователей, расписание, заявки,
+              Файл "{pendingRestore?.name}" заменит содержимое всей базы: пользователей, расписание, заявки,
               оценки и объявления. Текущие данные будут удалены, отменить это нельзя. На случай ошибки сначала
               скачайте свежий полный бэкап.
             </DialogDescription>

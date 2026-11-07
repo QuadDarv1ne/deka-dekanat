@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * E2E-проверка «суверенитета данных» прототипа «Дека».
+ * E2E-проверка "суверенитета данных" прототипа "Дека".
  *
  * Запуск: npm run e2e          (сервер должен работать; адрес: E2E_URL, по умолчанию http://127.0.0.1:3000)
  * Пример: E2E_URL=https://deka.example.ru npm run e2e
@@ -53,7 +53,7 @@ async function waitForServer() {
 }
 
 async function main() {
-  console.log(`E2E «Дека»: проверяем ${BASE}\n`);
+  console.log(`E2E "Дека": проверяем ${BASE}\n`);
 
   // 0) Сервер жив
   const health = await waitForServer();

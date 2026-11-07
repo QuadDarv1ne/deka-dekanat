@@ -1,12 +1,12 @@
 /**
  * Работа со временем. Университет живёт по московскому времени (UTC+3,
- * перехода на летнее время нет с 2014 года), поэтому вся логика «сегодня/
- * завтра/пара в 9:00» считается в MSK независимо от часового пояса сервера.
+ * перехода на летнее время нет с 2014 года), поэтому вся логика "сегодня/
+ * завтра/пара в 9:00" считается в MSK независимо от часового пояса сервера.
  */
 
 export const MSK_OFFSET_MIN = 180
 
-/** Момент «сейчас» и московские календарные величины одним вызовом. */
+/** Момент "сейчас" и московские календарные величины одним вызовом. */
 export function mskNow(): {
   now: Date // настоящий момент (для таймеров)
   date: string // YYYY-MM-DD по МСК
@@ -51,7 +51,7 @@ export function minutesToHHMM(min: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-/** «4 ноября, вторник» из ISO-даты (по МСК). */
+/** "4 ноября, вторник" из ISO-даты (по МСК). */
 export function humanDate(dateIso: string, opts?: { short?: boolean; withWeekday?: boolean }): string {
   const d = new Date(`${dateIso}T12:00:00.000Z`)
   const months = opts?.short
@@ -63,7 +63,7 @@ export function humanDate(dateIso: string, opts?: { short?: boolean; withWeekday
   return `${base}, ${WD_FULL[wd - 1]}`
 }
 
-/** «сегодня / завтра / послезавтра / 5 ноября» */
+/** "сегодня / завтра / послезавтра / 5 ноября" */
 export function relativeDay(dateIso: string): string {
   const today = mskTodayIso()
   if (dateIso === today) return 'сегодня'
@@ -72,7 +72,7 @@ export function relativeDay(dateIso: string): string {
   return humanDate(dateIso)
 }
 
-/** «через 15 мин / идёт сейчас / через 2 ч 5 мин» */
+/** "через 15 мин / идёт сейчас / через 2 ч 5 мин" */
 export function relativeTimeTo(minutesOfDay: number): string {
   const { minutes } = mskNow()
   const diff = minutesOfDay - minutes

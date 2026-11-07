@@ -115,7 +115,7 @@ export function StudentGrades() {
             </p>
             <p className="mt-1.5 text-2xl font-bold leading-none">{data.summary.subjectsCount}</p>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {data.summary.excellentCount} в зоне «отлично»{data.summary.riskCount ? `, ${data.summary.riskCount} с риском` : ""}
+              {data.summary.excellentCount} в зоне "отлично"{data.summary.riskCount ? `, ${data.summary.riskCount} с риском` : ""}
             </p>
           </div>
         </div>
@@ -167,7 +167,7 @@ export function StudentGrades() {
                           <span className="text-muted-foreground">{formatDateSafe(e.date)}</span>
                           <span className="min-w-0 flex-1 truncate">
                             {e.title}
-                            {e.comment && <span className="ml-1.5 text-[11px] italic text-muted-foreground">«{e.comment}»</span>}
+                            {e.comment && <span className="ml-1.5 text-[11px] italic text-muted-foreground">"{e.comment}"</span>}
                           </span>
                           {e.mark ? (
                             <Badge className={cn("border-0", markBadge(e.mark))}>{e.mark}</Badge>

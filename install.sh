@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# «Дека» — установка на чистый сервер одной командой.
+# "Дека" — установка на чистый сервер одной командой.
 #
 # Запуск из корня проекта (Ubuntu/Debian, от обычного пользователя с sudo):
 #   bash install.sh                  # приложение (Docker)
@@ -25,7 +25,7 @@ say() { printf '\033[1;36m▶ %s\033[0m\n' "$*"; }
 die() { printf '✗ %s\n' "$*" >&2; exit 1; }
 
 # 0) проверка окружения
-[[ -f docker-compose.yml ]] || die "Запустите скрипт из корня проекта «Дека» (рядом с docker-compose.yml)"
+[[ -f docker-compose.yml ]] || die "Запустите скрипт из корня проекта \"Дека\" (рядом с docker-compose.yml)"
 command -v curl >/dev/null 2>&1 || die "Нужен curl: sudo apt install -y curl"
 
 # 1) Docker
@@ -67,14 +67,14 @@ IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 VER="$(curl -fsS "http://127.0.0.1:${PORT}/api/health" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')"
 echo
 echo "──────────────────────────────────────────────────────────────"
-echo "  «Дека» запущена:  http://${IP}:${PORT}"
+echo "  "Дека" запущена:  http://${IP}:${PORT}"
 printf '  Версия: %s   Health: /api/health\n' "${VER:-?}"
 echo "  Тестовые аккаунты (пароль demo1234):"
 echo "    студент:   student1 / student2"
 echo "    деканат:   dekanat"
-echo "  Бэкап: кабинет деканата → Профиль → «Полный бэкап (JSON)»"
+echo "  Бэкап: кабинет деканата → Профиль → \"Полный бэкап (JSON)\""
 echo "  HTTPS: см. DEPLOY.md (Caddy, 3 строки конфига)"
 if [[ "$COMPOSE_FILE" == "docker-compose.ollama.yml" ]]; then
-  echo "  Модель: docker compose -f ${COMPOSE_FILE} logs -f ollama-init  # ждать «Модель готова.»"
+  echo "  Модель: docker compose -f ${COMPOSE_FILE} logs -f ollama-init  # ждать \"Модель готова.\""
 fi
 echo "──────────────────────────────────────────────────────────────"

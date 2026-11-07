@@ -85,7 +85,7 @@ export function CertificateSheet({ request, profile }: { request: CertificateReq
         <p>
           Настоящая справка подтверждает, что{" "}
           <b>{profile.fullName}</b> является студентом {course} курса {studyForm} формы обучения по
-          направлению подготовки «{profile.program}», учебная группа <b>{profile.groupName}</b>{" "}
+          направлению подготовки "{profile.program}", учебная группа <b>{profile.groupName}</b>{" "}
           (зачётная книжка № {profile.recordBook}).
         </p>
         <p>Справка дана для предъявления по месту требования.</p>
@@ -117,7 +117,7 @@ export function CertificateSheet({ request, profile }: { request: CertificateReq
       </div>
 
       <p className="mt-10 border-t border-neutral-200 pt-3 text-center text-[10.5px] text-neutral-400">
-        Документ сформирован в прототипе «Дека — цифровой деканат будущего». Все данные вымышленные.
+        Документ сформирован в прототипе "Дека — цифровой деканат будущего". Все данные вымышленные.
       </p>
     </div>
   );
@@ -145,7 +145,7 @@ export function CertificateDialog({
           <DialogHeader>
             <DialogTitle>Электронная версия справки</DialogTitle>
             <DialogDescription>
-              Можно распечатать или сохранить в PDF: в окне печати выберите «Сохранить как PDF».
+              Можно распечатать или сохранить в PDF: в окне печати выберите "Сохранить как PDF".
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-hidden rounded-xl border shadow-sm">

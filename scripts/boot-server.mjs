@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Автозапуск продакшн-сервера «Деки» на порту 3000.
+ * Автозапуск продакшн-сервера "Деки" на порту 3000.
  *
  * Окружение Z.ai при каждой загрузке песочницы выполняет `bun run db:push`
  * (см. boot-лог платформы), поэтому запуск сервера прицеплен в конец этого
@@ -91,7 +91,7 @@ async function main() {
 
   const up = await waitPort(25000);
   if (up) {
-    console.log(`[boot-server] сервер «Дека» поднят на :${PORT} (pid ${child.pid}), лог: ${LOG}`);
+    console.log(`[boot-server] сервер "Дека" поднят на :${PORT} (pid ${child.pid}), лог: ${LOG}`);
   } else {
     console.error(`[boot-server] сервер не поднялся за 25 c — смотрите ${LOG}`);
     process.exit(1);

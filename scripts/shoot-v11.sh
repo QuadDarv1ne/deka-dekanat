@@ -45,7 +45,7 @@ agent-browser eval "(() => { const f = document.querySelector('form'); const set
 wait_for 'button "Профиль"' || echo "WARN: no cabinet"
 sleep 1
 
-# ── 3. Раздел «Заявки» (нижняя навигация через DOM) ──
+# ── 3. Раздел "Заявки" (нижняя навигация через DOM) ──
 agent-browser eval "(() => { const b = [...document.querySelectorAll('nav[aria-label=\"Нижняя навигация\"] button')].find(x => x.textContent.includes('Заявки')); if (b) { b.click(); return 'clicked'; } return 'NOT FOUND'; })()" 2>&1 | head -1
 wait_for 'Отменить заявку' || echo "WARN: no requests section"
 sleep 1
