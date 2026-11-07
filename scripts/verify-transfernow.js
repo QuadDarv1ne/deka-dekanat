@@ -1,6 +1,6 @@
 /* Проверка ссылки TransferNow end-to-end: открыть /dl/, принять cookie-модалку,
  * убрать рекламные слои, нажать "Скачать файл", сохранить файл, сверить размер. */
-const { chromium } = require("playwright-core");
+const { chromium } = await import("playwright-core");
 
 const EXEC = process.env.HOME + "/.cache/ms-playwright/chromium-1200/chrome-linux64/chrome";
 const LINK = "https://www.transfernow.net/dl/20261107YiPRRE1g";

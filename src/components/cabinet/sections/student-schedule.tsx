@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 type Slot = {
   id: string;
+  dateIso: string;
   startMin: number;
   endMin: number;
   start: string;

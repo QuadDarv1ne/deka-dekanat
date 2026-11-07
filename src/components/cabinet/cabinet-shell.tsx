@@ -15,6 +15,7 @@ import {
   Users2,
   User,
   WifiOff,
+  type LucideIcon,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,7 @@ const AVATAR_BG: Record<string, string> = {
   lime: "bg-lime-600",
 };
 
-const STUDENT_NAV: { key: StudentSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const STUDENT_NAV: { key: StudentSection; label: string; icon: LucideIcon }[] = [
   { key: "home", label: "Главная", icon: Home },
   { key: "schedule", label: "Расписание", icon: CalendarDays },
   { key: "grades", label: "Оценки", icon: GraduationCap },
@@ -48,7 +49,7 @@ const STUDENT_NAV: { key: StudentSection; label: string; icon: React.ComponentTy
   { key: "profile", label: "Профиль", icon: User },
 ];
 
-const STAFF_NAV: { key: StaffSection; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const STAFF_NAV: { key: StaffSection; label: string; icon: LucideIcon }[] = [
   { key: "requests", label: "Заявки", icon: FileText },
   { key: "announcements", label: "Объявления", icon: Megaphone },
   { key: "schedule", label: "Переносы", icon: CalendarDays },

@@ -64,7 +64,6 @@ export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initial
           onNavigate={setSection}
           onOpenAssistant={() => setAssistantOpen(true)}
           onOpenNotifications={() => setNotifOpen(true)}
-          onUnreadChange={setUnread}
         />
       )}
       {!isStaff && user.student && section === "schedule" && <StudentSchedule />}

@@ -87,7 +87,10 @@ async function buildContext(userId: string, groupName: string, faculty: string):
     subjects.length ? `Успеваемость семестра: ${subjLine}.` : "Оценок в этом семестре пока нет.",
     exams.length ? `Расписание сессии: ${exams.map((e) => `${e.subjectName} — ${e.kind} ${humanDate(e.date)} в ${minutesToHHMM(e.startMin)}, ауд. ${e.room}`).join("; ")}.` : "Расписание сессии пока не опубликовано.",
     requests.length ? `Заявки: ${requests.map((r) => `${r.typeTitle} (${r.number}) — ${statusRu[r.status] ?? r.status}`).join("; ")}.` : "Заявок нет.",
-    deadlines.length ? `Дедлайны: ${deadlines.map((a) => `${a.title} — до ${humanDate(a.deadline.toISOString().slice(0, 10))}`).join("; ")}.` : "Ближайших дедлайнов нет.",
+    deadlines.length ? `Дедлайны: ${deadlines
+      .filter((a) => a.deadline)
+      .map((a) => `${a.title} — до ${humanDate(a.deadline!.toISOString().slice(0, 10))}`)
+      .join("; ")}.` : "Ближайших дедлайнов нет.",
     `Часы работы деканата: ${DEANERY_HOURS}`,
     `Справки заказываются в разделе "Заявки": справка об обучении, справка для налогового вычета, о стипендии, для визы, академический отпуск, перезачёт дисциплин.`,
   ].join("\n");

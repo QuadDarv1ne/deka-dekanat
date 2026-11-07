@@ -117,27 +117,27 @@ export async function restoreBackupInto(
   await tx.user.deleteMany();
 
   // 2) Создание заново — родители первыми, id и даты сохраняются как в копии
-  await tx.user.createMany({ data: row("users") });
+  await tx.user.createMany({ data: row("users") as any });
   if ((d.studentProfiles as BackupRow[]).length)
-    await tx.studentProfile.createMany({ data: row("studentProfiles") });
+    await tx.studentProfile.createMany({ data: row("studentProfiles") as any });
   if ((d.requestTypes as BackupRow[]).length)
-    await tx.requestType.createMany({ data: row("requestTypes") });
+    await tx.requestType.createMany({ data: row("requestTypes") as any });
   if ((d.scheduleSlots as BackupRow[]).length)
-    await tx.scheduleSlot.createMany({ data: row("scheduleSlots") });
+    await tx.scheduleSlot.createMany({ data: row("scheduleSlots") as any });
   if ((d.scheduleChanges as BackupRow[]).length)
-    await tx.scheduleChange.createMany({ data: row("scheduleChanges") });
-  if ((d.grades as BackupRow[]).length) await tx.grade.createMany({ data: row("grades") });
-  if ((d.examItems as BackupRow[]).length) await tx.examItem.createMany({ data: row("examItems") });
+    await tx.scheduleChange.createMany({ data: row("scheduleChanges") as any });
+  if ((d.grades as BackupRow[]).length) await tx.grade.createMany({ data: row("grades") as any });
+  if ((d.examItems as BackupRow[]).length) await tx.examItem.createMany({ data: row("examItems") as any });
   if ((d.announcements as BackupRow[]).length)
-    await tx.announcement.createMany({ data: row("announcements") });
+    await tx.announcement.createMany({ data: row("announcements") as any });
   if ((d.serviceRequests as BackupRow[]).length)
-    await tx.serviceRequest.createMany({ data: row("serviceRequests") });
+    await tx.serviceRequest.createMany({ data: row("serviceRequests") as any });
   if ((d.requestEvents as BackupRow[]).length)
-    await tx.requestEvent.createMany({ data: row("requestEvents") });
+    await tx.requestEvent.createMany({ data: row("requestEvents") as any });
   if ((d.notifications as BackupRow[]).length)
-    await tx.notification.createMany({ data: row("notifications") });
+    await tx.notification.createMany({ data: row("notifications") as any });
   if ((d.assistantMessages as BackupRow[]).length)
-    await tx.assistantMessage.createMany({ data: row("assistantMessages") });
+    await tx.assistantMessage.createMany({ data: row("assistantMessages") as any });
 
   return backupCounts(d);
 }
