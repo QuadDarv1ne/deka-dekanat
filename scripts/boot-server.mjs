@@ -45,7 +45,7 @@ function portAlive(timeoutMs = 1500) {
 async function waitPort(timeoutMs = 20000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
-    if (await portAlive(800)) return true;
+    if (await portAlive()) return true;
     await new Promise((r) => setTimeout(r, 500));
   }
   return false;
