@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Основной путь: Bun (быстрая установка, как в README)
+  lint-and-build-bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Установка зависимостей
+        run: bun install --frozen-lockfile
+
+      - name: Линт
+        run: bun run lint
+
+      - name: Сборка production-версии
+        env:
+          # DATABASE_URL нужен только для генерации Prisma-клиента на этапе сборки
+          DATABASE_URL: file:../db/custom.db
+        run: mkdir -p db && bunx prisma generate && bun run build
+
+  # Кросс-рантайм: тот же код на чистом Node + npm — без Bun
+  lint-and-build-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Установка зависимостей (npm)
+        run: npm install
+
+      - name: Наполнение базы (tsx, без Bun)
+        env:
+          DATABASE_URL: file:../db/custom.db
+        run: mkdir -p db && npx prisma generate && npm run db:push && npm run db:seed
+
+      - name: Линт
+        run: npm run lint
+
+      - name: Сборка production-версии
+        env:
+          DATABASE_URL: file:../db/custom.db
+        run: npm run build

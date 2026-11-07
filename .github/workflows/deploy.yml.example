@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Пример автоматического деплоя «Дека» на свой VPS при каждом push в main.
+#
+# Это ШАБЛОН: GitHub не запускает файлы с расширением .yml.example.
+# Чтобы включить автодеплой:
+#   1. Скопируйте файл: cp deploy.yml.example deploy.yml (в папке .github/workflows/)
+#   2. На VPS: установите Docker + docker compose, клонируйте репозиторий
+#      в /opt/deka (или поправьте путь в script ниже), задайте AUTH_SECRET
+#      в docker-compose.yml или в .env рядом с ним.
+#   3. В репозитории GitHub → Settings → Secrets and variables → Actions,
+#      добавьте секреты:
+#        SSH_HOST         — IP или домен сервера
+#        SSH_USER         — пользователь (напр. root или deploy)
+#        SSH_PRIVATE_KEY  — приватный ключ (cat ~/.ssh/id_ed25519)
+#   4. Закоммитьте deploy.yml — каждый push в main будет обновлять сервер.
+#
+# Сервер остаётся полностью вашим: никакого облака платформы, данные и модель
+# живут на машине, которую контролирует университет.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Деплой по SSH (git pull + docker compose up --build)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/deka
+            git pull --ff-only
+            docker compose up -d --build
+            docker image prune -f

@@ -1,0 +1,70 @@
+# Релиз «Дека»: при пуше тега вида v1.6.0 автоматически:
+#   1) собирается и публикуется Docker-образ в GHCR (ghcr.io/<владелец>/deka-dekanat);
+#   2) создаётся GitHub Release с zip/tar.gz архивами исходников (git archive).
+#
+# Так любой университет может запустить прототип без клонирования репозитория:
+#   docker run -d -p 3000:3000 -v deka-db:/app/db -e AUTH_SECRET=<секрет> \
+#     ghcr.io/<владелец>/deka-dekanat:latest
+#
+# Публикация:  git tag v1.6.0 && git push origin v1.6.0
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # создать GitHub Release
+  packages: write # опубликовать образ в GHCR
+
+jobs:
+  docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  source-archives:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Собрать архивы исходников
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          git archive --format=zip    --prefix="deka-dekanat-${VERSION}/" -o "deka-dekanat-${VERSION}.zip" HEAD
+          git archive --format=tar.gz --prefix="deka-dekanat-${VERSION}/" -o "deka-dekanat-${VERSION}.tar.gz" HEAD
+
+      - name: Создать GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            deka-dekanat-*.zip
+            deka-dekanat-*.tar.gz
+          generate_release_notes: true

@@ -1,0 +1,3 @@
+# Архивы проекта, раздаваемые с сайта (/download), не попадают в git archive
+# и в GitHub ZIP-ball — иначе архив включал бы сам себя (рекурсия и +2 МБ).
+public/deka-dekanat-* export-ignore

@@ -1,0 +1,63 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# «Дека» — полностью автономный стек: приложение + локальная LLM (Ollama).
+#
+# Ни одного внешнего AI-сервиса: модель крутится на вашей машине / VPS
+# университета, персональные данные студентов не покидают контур вуза.
+#
+# Запуск:
+#   docker compose -f docker-compose.ollama.yml up -d --build
+#   # один раз дождаться загрузки модели (~2 ГБ) в логе ollama-init:
+#   docker compose -f docker-compose.ollama.yml logs -f ollama-init
+# Затем открыть http://localhost:3000 (студент: student1 / demo1234).
+#
+# Модель qwen2.5:3b-instruct хорошо говорит по-русски и работает даже без GPU.
+# Заменить можно в переменной LLM_MODEL ниже (см. список на ollama.com/library).
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: deka-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama
+
+  # одноразовая задача: скачать модель перед первым запуском
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      - ollama
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      'echo "Загружаем модель…"; OLLAMA_HOST=http://ollama:11434 ollama pull ${LLM_MODEL:-qwen2.5:3b-instruct} && echo "Модель готова."'
+
+  deka:
+    build: .
+    container_name: deka-prototype
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    ports:
+      - "3000:3000"
+    environment:
+      # Секрет берётся из .env рядом с compose-файлом (или из окружения shell)
+      AUTH_SECRET: "${AUTH_SECRET:-ЗАМЕНИТЕ_НА_СВОЙ_СЕКРЕТ_64_hex}"
+      DATABASE_URL: "file:/app/db/custom.db"
+      # локальная модель вместо внешнего AI-сервиса:
+      LLM_API_KEY: "ollama-local" # любой непустой ключ — включаем режим «свой провайдер»
+      LLM_BASE_URL: "http://ollama:11434/v1"
+      LLM_MODEL: "${LLM_MODEL:-qwen2.5:3b-instruct}"
+    volumes:
+      - deka-db:/app/db
+    healthcheck:
+      # /api/health проверяет и приложение, и доступность базы (503, если БД не отвечает)
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  ollama-models:
+  deka-db:

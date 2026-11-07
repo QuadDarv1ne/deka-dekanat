@@ -1,0 +1,30 @@
+services:
+  deka:
+    build: .
+    container_name: deka-prototype
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Секрет берётся из .env рядом с compose-файлом (или из окружения shell).
+      # Если его нет — подставляется заглушка (для локального теста; в проде создайте .env: openssl rand -hex 32)
+      AUTH_SECRET: "${AUTH_SECRET:-ЗАМЕНИТЕ_НА_СВОЙ_СЕКРЕТ_64_hex}"
+      DATABASE_URL: "file:/app/db/custom.db"
+      # Необязательно: свой ИИ-провайдер для ассистента (OpenAI-совместимый).
+      # Без него ассистент работает в офлайн-режиме, отвечая по данным из базы.
+      # LLM_API_KEY: "sk-..."
+      # LLM_BASE_URL: "https://api.openai.com/v1"
+      # LLM_MODEL: "gpt-4o-mini"
+    volumes:
+      # база живёт на диске хоста — переживает перезапуск контейнера
+      - deka-db:/app/db
+    healthcheck:
+      # /api/health проверяет и приложение, и доступность базы (503, если БД не отвечает)
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  deka-db:

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Нет сети — Дека</title>
+    <style>
+      :root { color-scheme: light; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #fafaf7;
+        color: #16302d;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        text-align: center;
+        padding: 24px;
+      }
+      .logo {
+        width: 64px; height: 64px; border-radius: 18px;
+        background: #0f766e; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px; font-weight: 700;
+      }
+      h1 { font-size: 20px; margin: 6px 0 0; }
+      p { font-size: 14px; color: #5c6f6c; max-width: 320px; line-height: 1.5; margin: 0; }
+      button {
+        margin-top: 10px; padding: 10px 22px; border: 0; border-radius: 12px;
+        background: #0f766e; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+      }
+      small { color: #9aa8a5; font-size: 11px; }
+    </style>
+  </head>
+  <body>
+    <div class="logo">Д</div>
+    <h1>Нет соединения</h1>
+    <p>Дека продолжит работать, как только появится сеть. Уже загруженные страницы откроются из кэша.</p>
+    <button onclick="location.reload()">Обновить</button>
+    <small>Прототип конкурса «Цифровой деканат будущего»</small>
+  </body>
+</html>

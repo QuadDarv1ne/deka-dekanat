@@ -1,0 +1,186 @@
+// Схема БД прототипа «Дека — цифровой деканат» (концепт для конкурса)
+// Все данные в базе — вымышленные.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Пользователи ─────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  login        String   @unique // логин для входа
+  passwordHash String // bcrypt-хеш, пароль в открытом виде не хранится
+  role         String   @default("STUDENT") // STUDENT | STAFF
+  name         String // ФИО
+  avatarColor  String   @default("teal") // цвет аватара
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student      StudentProfile?
+  grades       Grade[]
+  requests     ServiceRequest[]
+  notifications Notification[]
+  assistantMsgs AssistantMessage[]
+}
+
+model StudentProfile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  faculty      String // факультет
+  program      String // направление подготовки
+  course       Int // курс
+  groupName    String // учебная группа
+  recordBook   String // номер зачётной книжки (вымышленный)
+  studyForm    String  @default("Очная")
+  status       String  @default("Учится")
+  entryYear    Int
+  curatorName  String?
+}
+
+// ───────────────────────── Расписание ─────────────────────────
+
+model ScheduleSlot {
+  id          String @id @default(cuid())
+  groupName   String // группа, для которой пара
+  weekday     Int // 1 = понедельник … 6 = суббота
+  startMin    Int // начало пары, минут от 00:00 (напр. 540 = 09:00)
+  endMin      Int
+  subjectName String
+  kind        String // Лекция | Практика | Лаборатория | Электив
+  room        String // аудитория
+  building    String?
+  teacherName String
+}
+
+// Изменения расписания: перенос или отмена конкретной даты
+model ScheduleChange {
+  id        String   @id @default(cuid())
+  groupName String
+  date      String // дата изменения в формате YYYY-MM-DD (московское время)
+  kind      String // CANCELLED | MOVED | REPLACED
+  slotId    String? // какая пара затронута (если известна)
+  subject   String
+  message   String // человеческое описание
+  newDate   String? // куда перенесено (YYYY-MM-DD)
+  newStartMin Int?
+  newRoom   String?
+  authorName String
+  createdAt DateTime @default(now())
+}
+
+// ───────────────────────── Успеваемость ─────────────────────────
+
+model Grade {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjectName String // дисциплина
+  teacherName String
+  kind        String // Баллы за модуль | Коллоквиум | Лабораторные | Экзамен | Зачёт | Курсовая
+  title       String // название контрольной точки
+  score       Int? // баллы (0–100 накопительно или оценка 2–5)
+  maxScore    Int?
+  mark        String? // "5", "4", "3", "2", "Зачёт", "Незачёт"
+  weight      Int      @default(1)
+  date        DateTime
+  comment     String?
+}
+
+// Экзамен/зачёт в сессию
+model ExamItem {
+  id          String @id @default(cuid())
+  groupName   String
+  subjectName String
+  kind        String // Экзамен | Зачёт | Консультация
+  date        String // YYYY-MM-DD
+  startMin    Int
+  room        String
+  teacherName String
+}
+
+// ───────────────────────── Заявки и справки ─────────────────────────
+
+model RequestType {
+  id             String  @id @default(cuid())
+  code           String  @unique
+  title          String // «Справка об обучении»
+  description    String
+  icon           String  @default("file-text")
+  processingDays Int     @default(3) // срок изготовления в рабочих днях
+  needsComment   Boolean @default(false)
+  sortOrder      Int     @default(0)
+  isActive       Boolean @default(true)
+}
+
+model ServiceRequest {
+  id           String   @id @default(cuid())
+  number       String   @unique // номер заявки, напр. СП-2026-0142
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  typeCode     String
+  typeTitle    String
+  status       String   @default("NEW") // NEW | IN_PROGRESS | READY | DONE | REJECTED
+  comment      String? // комментарий студента
+  staffComment String? // комментарий деканата
+  dueDate      DateTime? // ожидаемая готовность
+  readyAt      DateTime? // когда готова
+  docCode      String? // код подлинности готовой справки (QR)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  history RequestEvent[]
+}
+
+model RequestEvent {
+  id         String   @id @default(cuid())
+  requestId  String
+  request    ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  status     String
+  comment    String?
+  authorName String
+  createdAt  DateTime @default(now())
+}
+
+// ───────────────────────── Объявления и уведомления ─────────────────────────
+
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  body       String
+  category   String   @default("ОБЩЕЕ") // СЕССИЯ | СТИПЕНДИЯ | МЕРОПРИЯТИЕ | РАСПИСАНИЕ | ОБЩЕЕ
+  audience   String   @default("ALL") // ALL | GROUP:<группа> | FACULTY:<факультет>
+  authorName String
+  pinned     Boolean  @default(false)
+  deadline   DateTime? // дедлайн, если есть
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String    @default("SYSTEM") // REQUEST_STATUS | DEADLINE | SCHEDULE | SYSTEM
+  title     String
+  body      String
+  link      String? // внутренняя ссылка, напр. /requests
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// ───────────────────────── ИИ-ассистент «Дека» ─────────────────────────
+
+model AssistantMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String // user | assistant
+  content   String
+  createdAt DateTime @default(now())
+}
