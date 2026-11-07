@@ -1,12 +1,11 @@
 /* Проверка ссылки TransferNow end-to-end: открыть /dl/, принять cookie-модалку,
  * убрать рекламные слои, нажать "Скачать файл", сохранить файл, сверить размер. */
-const { chromium } = await import("playwright-core");
-
 const EXEC = process.env.HOME + "/.cache/ms-playwright/chromium-1200/chrome-linux64/chrome";
 const LINK = "https://www.transfernow.net/dl/20261107YiPRRE1g";
 const OUT = "/tmp/dl-verify.zip";
 
 (async () => {
+  const { chromium } = await import("playwright-core");
   const browser = await chromium.launch({ executablePath: EXEC, headless: true });
   const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 1366, height: 850 } });
   const page = await context.newPage();

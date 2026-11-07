@@ -117,27 +117,27 @@ export async function restoreBackupInto(
   await tx.user.deleteMany();
 
   // 2) Создание заново — родители первыми, id и даты сохраняются как в копии
-  await tx.user.createMany({ data: row("users") as any });
+  await tx.user.createMany({ data: row("users") as Prisma.UserCreateManyInput[] });
   if ((d.studentProfiles as BackupRow[]).length)
-    await tx.studentProfile.createMany({ data: row("studentProfiles") as any });
+    await tx.studentProfile.createMany({ data: row("studentProfiles") as Prisma.StudentProfileCreateManyInput[] });
   if ((d.requestTypes as BackupRow[]).length)
-    await tx.requestType.createMany({ data: row("requestTypes") as any });
+    await tx.requestType.createMany({ data: row("requestTypes") as Prisma.RequestTypeCreateManyInput[] });
   if ((d.scheduleSlots as BackupRow[]).length)
-    await tx.scheduleSlot.createMany({ data: row("scheduleSlots") as any });
+    await tx.scheduleSlot.createMany({ data: row("scheduleSlots") as Prisma.ScheduleSlotCreateManyInput[] });
   if ((d.scheduleChanges as BackupRow[]).length)
-    await tx.scheduleChange.createMany({ data: row("scheduleChanges") as any });
-  if ((d.grades as BackupRow[]).length) await tx.grade.createMany({ data: row("grades") as any });
-  if ((d.examItems as BackupRow[]).length) await tx.examItem.createMany({ data: row("examItems") as any });
+    await tx.scheduleChange.createMany({ data: row("scheduleChanges") as Prisma.ScheduleChangeCreateManyInput[] });
+  if ((d.grades as BackupRow[]).length) await tx.grade.createMany({ data: row("grades") as Prisma.GradeCreateManyInput[] });
+  if ((d.examItems as BackupRow[]).length) await tx.examItem.createMany({ data: row("examItems") as Prisma.ExamItemCreateManyInput[] });
   if ((d.announcements as BackupRow[]).length)
-    await tx.announcement.createMany({ data: row("announcements") as any });
+    await tx.announcement.createMany({ data: row("announcements") as Prisma.AnnouncementCreateManyInput[] });
   if ((d.serviceRequests as BackupRow[]).length)
-    await tx.serviceRequest.createMany({ data: row("serviceRequests") as any });
+    await tx.serviceRequest.createMany({ data: row("serviceRequests") as Prisma.ServiceRequestCreateManyInput[] });
   if ((d.requestEvents as BackupRow[]).length)
-    await tx.requestEvent.createMany({ data: row("requestEvents") as any });
+    await tx.requestEvent.createMany({ data: row("requestEvents") as Prisma.RequestEventCreateManyInput[] });
   if ((d.notifications as BackupRow[]).length)
-    await tx.notification.createMany({ data: row("notifications") as any });
+    await tx.notification.createMany({ data: row("notifications") as Prisma.NotificationCreateManyInput[] });
   if ((d.assistantMessages as BackupRow[]).length)
-    await tx.assistantMessage.createMany({ data: row("assistantMessages") as any });
+    await tx.assistantMessage.createMany({ data: row("assistantMessages") as Prisma.AssistantMessageCreateManyInput[] });
 
   return backupCounts(d);
 }
