@@ -167,31 +167,57 @@ async function main() {
   console.log(`— Расписание: ${slots.length} пар в неделю`)
 
   // ── Переносы и отмены (динамично, на ближайшие дни) ──────────────────
-  const thu = nextWeekday(today, 4)
-  const fri = nextWeekday(today, 5)
+  /**
+   * Ближайшая будущая дата, когда у группы реально стоит этот предмет.
+   * Нужно, чтобы демонстрация переноса/отмены была видна студенту:
+   * изменение расписания применяется только к тому дню, где пара есть.
+   */
+  function nextDateWithSubject(groupName: string, subject: string, skip = 0): Date {
+    const days = slots
+      .filter((s) => s.groupName === groupName && s.subjectName.startsWith(subject))
+      .map((s) => s.weekday)
+    for (let i = 1; i <= 14; i++) {
+      const d = addDays(today, i)
+      if (!days.includes(wdOf(d))) continue
+      if (skip > 0) {
+        skip -= 1
+        continue
+      }
+      return d
+    }
+    return addDays(today, 1)
+  }
+  const WD_RU = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье']
+  const humanWd = (d: Date) => `${humanDate(d)}, ${WD_RU[wdOf(d) - 1]}`
+
+  const bdFrom = nextDateWithSubject('ПИ-231', 'Базы данных')
+  const bdTo = addDays(bdFrom, 1)
+  const engDay = nextDateWithSubject('ПИ-231', 'Английский язык')
+  const statDay = nextDateWithSubject('ЭК-321', 'Статистика')
+
   await prisma.scheduleChange.createMany({
     data: [
       {
-        groupName: 'ПИ-231', date: isoDate(thu), kind: 'MOVED',
+        groupName: 'ПИ-231', date: isoDate(bdFrom), kind: 'MOVED',
         subject: 'Базы данных',
-        message: `Лекция по базам данных (${humanDate(thu)}, 09:00) перенесена на ${humanDate(fri)}, 12:40, ауд. Б-201.`,
-        newDate: isoDate(fri), newStartMin: 760, newRoom: 'Б-201', authorName: 'Смирнова О. В.',
+        message: `Лекция по базам данных (${humanWd(bdFrom)}, 09:00) перенесена на ${humanWd(bdTo)}, 12:40, ауд. Б-201.`,
+        newDate: isoDate(bdTo), newStartMin: 760, newRoom: 'Б-201', authorName: 'Смирнова О. В.',
       },
       {
-        groupName: 'ПИ-231', date: isoDate(addDays(today, 2)), kind: 'CANCELLED',
+        groupName: 'ПИ-231', date: isoDate(engDay), kind: 'CANCELLED',
         subject: 'Английский язык',
-        message: `Практика по английскому языку ${humanDate(addDays(today, 2))} отменяется (методический день кафедры).`,
+        message: `Практика по английскому языку ${humanWd(engDay)} отменяется (методический день кафедры).`,
         authorName: 'Смирнова О. В.',
       },
       {
-        groupName: 'ЭК-321', date: isoDate(addDays(today, 3)), kind: 'MOVED',
+        groupName: 'ЭК-321', date: isoDate(statDay), kind: 'MOVED',
         subject: 'Статистика',
-        message: `Лекция по статистике ${humanDate(addDays(today, 3))} будет в ауд. В-306 (была В-204).`,
+        message: `Лекция по статистике ${humanWd(statDay)} будет в ауд. В-306 (была В-204).`,
         newRoom: 'В-306', authorName: 'Смирнова О. В.',
       },
     ],
   })
-  console.log('✓ Изменения расписания: 3')
+  console.log('✓ Изменения расписания: 3 (перенос, отмена, замена аудитории — на реальные дни расписания)')
 
   // ── Оценки ───────────────────────────────────────────────────────────
   type Row = { kind: string; title: string; score?: number; maxScore?: number; mark?: string; d: Date; comment?: string }

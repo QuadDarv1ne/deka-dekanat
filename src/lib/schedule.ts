@@ -24,20 +24,31 @@ export type DaySlot = {
   note?: string
 }
 
-export async function getDaySlots(groupName: string, dateIso: string): Promise<DaySlot[]> {
-  const d = new Date(`${dateIso}T12:00:00.000Z`)
-  const weekday = d.getUTCDay() === 0 ? 7 : d.getUTCDay()
+const isoWeekday = (dateIso: string) => {
+  const wd = new Date(`${dateIso}T12:00:00.000Z`).getUTCDay()
+  return wd === 0 ? 7 : wd
+}
 
-  const [slots, changes] = await Promise.all([
-    db.scheduleSlot.findMany({
-      where: { groupName, weekday },
-      orderBy: { startMin: "asc" },
-    }),
-    db.scheduleChange.findMany({
-      where: { groupName, OR: [{ date: dateIso }, { newDate: dateIso }] },
-      orderBy: { createdAt: "desc" },
-    }),
-  ])
+export async function getDaySlots(groupName: string, dateIso: string): Promise<DaySlot[]> {
+  const weekday = isoWeekday(dateIso)
+
+  const changes = await db.scheduleChange.findMany({
+    where: { groupName, OR: [{ date: dateIso }, { newDate: dateIso }] },
+    orderBy: { createdAt: "desc" },
+  })
+
+  // Слоты нужных дней недели: текущий день + дни, откуда перенесены пары в этот день.
+  // Исходная пара нужна, чтобы взять настоящего преподавателя и вид занятия.
+  const weekdays = new Set<number>([weekday])
+  for (const ch of changes) {
+    if (ch.newDate === dateIso && ch.kind === "MOVED" && ch.date) weekdays.add(isoWeekday(ch.date))
+  }
+
+  const allSlots = await db.scheduleSlot.findMany({
+    where: { groupName, weekday: { in: [...weekdays] } },
+    orderBy: { startMin: "asc" },
+  })
+  const slots = allSlots.filter((s) => s.weekday === weekday)
 
   const removed = new Set<string>() // id исходных слотов, которые трогать не надо
   const result: DaySlot[] = []
@@ -45,7 +56,7 @@ export async function getDaySlots(groupName: string, dateIso: string): Promise<D
   // замена только аудитории: либо явный ROOM, либо MOVED без новой даты
   const isRoomChange = (ch: (typeof changes)[number]) =>
     ch.kind === "ROOM" || (ch.kind === "MOVED" && !ch.newDate)
-  const matchSlot = (s: (typeof slots)[number], subject: string) => s.subjectName.startsWith(subject)
+  const matchSlot = (s: (typeof allSlots)[number], subject: string) => s.subjectName.startsWith(subject)
 
   for (const ch of changes) {
     if (ch.date === dateIso) {
@@ -70,8 +81,9 @@ export async function getDaySlots(groupName: string, dateIso: string): Promise<D
       }
     }
     if (ch.newDate === dateIso && ch.kind === "MOVED") {
-      // берём данные исходной пары (преподаватель, вид занятия, аудитория), а не автора изменения
-      const origin = slots.find((s) => matchSlot(s, ch.subject))
+      // данные исходной пары (преподаватель, вид занятия, аудитория) берём из её дня, а не из текущего
+      const originWd = ch.date ? isoWeekday(ch.date) : weekday
+      const origin = allSlots.find((s) => s.weekday === originWd && matchSlot(s, ch.subject))
       result.push({
         id: `moved-${ch.id}`,
         startMin: ch.newStartMin ?? 540,
