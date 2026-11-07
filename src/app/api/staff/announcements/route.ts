@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/api-helpers";
+import { mskMoment } from "@/lib/time";
 
 /**
  * Объявления деканата: список (GET) и публикация (POST).
@@ -44,7 +45,8 @@ export async function POST(req: NextRequest) {
   const text = String(body.body ?? "").trim().slice(0, 2000);
   const category = CATEGORIES.includes(String(body.category)) ? String(body.category) : "ОБЩЕЕ";
   const pinned = Boolean(body.pinned);
-  const deadline = body.deadline ? new Date(`${String(body.deadline).slice(0, 10)}T23:59:00.000Z`) : null;
+  // дедлайн — конец указанного дня по московскому времени (23:59 МСК), а не по UTC
+  const deadline = body.deadline ? mskMoment(String(body.deadline).slice(0, 10), 23 * 60 + 59) : null;
 
   let audience = "ALL";
   if (typeof body.audience === "string" && body.audience.startsWith("GROUP:")) {

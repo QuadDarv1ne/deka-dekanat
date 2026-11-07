@@ -27,6 +27,16 @@ const ALLOWED: Record<string, { title: string; notify: (n: string, t: string) =>
   },
 };
 
+/** Закрытые заявки: их статус менять уже нельзя. */
+const TERMINAL_STATUSES = ["DONE", "REJECTED", "CANCELLED"];
+
+/** Допустимые переходы: из какого статуса в какой можно перевести. */
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  NEW: ["IN_PROGRESS", "REJECTED"],
+  IN_PROGRESS: ["READY", "REJECTED"],
+  READY: ["DONE", "REJECTED"],
+};
+
 function randomDocCode(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const part = (n: number) => Array.from({ length: n }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
@@ -106,6 +116,22 @@ export async function PATCH(req: NextRequest) {
     include: { user: { include: { student: true } } },
   });
   if (!request) return NextResponse.json({ error: "Заявка не найдена" }, { status: 404 });
+
+  // закрытую заявку (выдана/отклонена/отменена студентом) менять нельзя
+  if (TERMINAL_STATUSES.includes(request.status)) {
+    return NextResponse.json(
+      { error: "Заявка уже закрыта — её статус изменить нельзя" },
+      { status: 409 }
+    );
+  }
+
+  const allowed = ALLOWED_TRANSITIONS[request.status] ?? [];
+  if (!allowed.includes(status)) {
+    return NextResponse.json(
+      { error: "Недопустимый переход статуса для этой заявки" },
+      { status: 409 }
+    );
+  }
 
   const [updated] = await db.$transaction([
     db.serviceRequest.update({

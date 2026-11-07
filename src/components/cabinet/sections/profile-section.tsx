@@ -104,11 +104,15 @@ export function ProfileSection({
     return () => clearTimeout(t);
   }, []);
 
-  // прогресс семестра: 1 сентября — 16 учебных недель
+  // прогресс семестра: 1 сентября текущего учебного года — 16 учебных недель
   const semesterProgress = (() => {
     if (!user.student) return 0;
-    const start = new Date(`${user.student.entryYear}-09-01T12:00:00.000Z`);
-    const now = new Date(`${today || mskTodayIso()}T12:00:00.000Z`);
+    const iso = today || mskTodayIso();
+    const year = Number(iso.slice(0, 4));
+    // учебный год начинается 1 сентября: до августа относимся к предыдущему
+    const academicYear = Number(iso.slice(5, 7)) >= 8 ? year : year - 1;
+    const start = new Date(`${academicYear}-09-01T12:00:00.000Z`);
+    const now = new Date(`${iso}T12:00:00.000Z`);
     const days = Math.floor((now.getTime() - start.getTime()) / 86400000);
     return Math.min(100, Math.max(3, Math.round((days / (16 * 7)) * 100)));
   })();

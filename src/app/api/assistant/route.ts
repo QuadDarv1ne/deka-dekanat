@@ -76,7 +76,7 @@ async function buildContext(userId: string, groupName: string, faculty: string):
     .map((s) => `${s.subjectName}: ${s.percent}% (${s.projected === "otl" ? "отлично" : s.projected === "hor" ? "хорошо" : s.projected === "udov" ? "удовлетворительно" : "риск неаттестации"})`)
     .join("; ");
 
-  const statusRu: Record<string, string> = { NEW: "принята", IN_PROGRESS: "в работе", READY: "готова к выдаче", DONE: "выдана", REJECTED: "отклонена" };
+  const statusRu: Record<string, string> = { NEW: "принята", IN_PROGRESS: "в работе", READY: "готова к выдаче", DONE: "выдана", REJECTED: "отклонена", CANCELLED: "отменена студентом" };
 
   return [
     `Сегодня ${human}. Учебный год студента: ${user.student.entryYear}/${user.student.entryYear + 1}.`,

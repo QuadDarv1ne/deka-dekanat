@@ -68,7 +68,7 @@ export async function GET(req: Request) {
     mondayIso,
     weekLabel:
       weekOffset === 0 ? "Эта неделя" : weekOffset === 1 ? "Следующая неделя" : weekOffset === -1 ? "Прошлая неделя" : `${humanDate(mondayIso)} — ${humanDate(addDaysIso(mondayIso, 5))}`,
-    semesterWeek: semesterWeek(todayIso, user.student.entryYear),
+    semesterWeek: semesterWeek(mondayIso, user.student.entryYear),
     days,
     changes: changes.map((c) => ({
       id: c.id,

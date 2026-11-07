@@ -63,6 +63,8 @@ export async function GET() {
       ? {
           dateIso: nextClass.dateIso,
           human: humanDate(nextClass.dateIso, { withWeekday: true }),
+          startMin: nextClass.slot.startMin,
+          endMin: nextClass.slot.endMin,
           start: minutesToHHMM(nextClass.slot.startMin),
           end: minutesToHHMM(nextClass.slot.endMin),
           subjectName: nextClass.slot.subjectName,

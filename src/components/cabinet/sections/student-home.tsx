@@ -31,6 +31,8 @@ type HomeData = {
   nextClass: {
     dateIso: string;
     human: string;
+    startMin: number;
+    endMin: number;
     start: string;
     end: string;
     subjectName: string;

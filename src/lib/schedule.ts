@@ -5,7 +5,9 @@ import { mskNow } from "@/lib/time";
  * Расписание с учётом переносов и отмен.
  * Правила применения изменений к конкретной дате:
  *  — CANCELLED (date == D): пара с этим предметом в этот день отменяется;
- *  — MOVED (date == D): исходная пара в этот день исчезает;
+ *  — MOVED (date == D, есть newDate): исходная пара в этот день исчезает;
+ *  — MOVED (date == D, нет newDate): меняется только аудитория пары;
+ *  — ROOM (date == D): меняется только аудитория пары;
  *  — MOVED/перенос "в этот день" (newDate == D): появляется дополнительная пара.
  */
 
@@ -40,11 +42,16 @@ export async function getDaySlots(groupName: string, dateIso: string): Promise<D
   const removed = new Set<string>() // id исходных слотов, которые трогать не надо
   const result: DaySlot[] = []
 
+  // замена только аудитории: либо явный ROOM, либо MOVED без новой даты
+  const isRoomChange = (ch: (typeof changes)[number]) =>
+    ch.kind === "ROOM" || (ch.kind === "MOVED" && !ch.newDate)
+  const matchSlot = (s: (typeof slots)[number], subject: string) => s.subjectName.startsWith(subject)
+
   for (const ch of changes) {
     if (ch.date === dateIso) {
       if (ch.kind === "CANCELLED") {
         for (const s of slots) {
-          if (s.subjectName.startsWith(ch.subject) && !removed.has(s.id)) {
+          if (matchSlot(s, ch.subject) && !removed.has(s.id)) {
             removed.add(s.id)
             result.push({
               ...s,
@@ -53,25 +60,27 @@ export async function getDaySlots(groupName: string, dateIso: string): Promise<D
             })
           }
         }
-      } else if (ch.kind === "MOVED") {
+      } else if (ch.kind === "MOVED" && ch.newDate) {
+        // перенос на другую дату: исходная пара в этот день не проводится
         for (const s of slots) {
-          if (s.subjectName.startsWith(ch.subject) && !removed.has(s.id)) {
+          if (matchSlot(s, ch.subject) && !removed.has(s.id)) {
             removed.add(s.id)
-            // исходная пара в этот день не проводится — место переноса придёт через newDate
           }
         }
       }
     }
     if (ch.newDate === dateIso && ch.kind === "MOVED") {
+      // берём данные исходной пары (преподаватель, вид занятия, аудитория), а не автора изменения
+      const origin = slots.find((s) => matchSlot(s, ch.subject))
       result.push({
         id: `moved-${ch.id}`,
         startMin: ch.newStartMin ?? 540,
         endMin: (ch.newStartMin ?? 540) + 90,
         subjectName: ch.subject,
-        kind: "Перенесённая пара",
-        room: ch.newRoom ?? "—",
-        building: null,
-        teacherName: ch.authorName,
+        kind: origin?.kind ?? "Перенесённая пара",
+        room: ch.newRoom ?? origin?.room ?? "—",
+        building: ch.newRoom ? null : origin?.building ?? null,
+        teacherName: origin?.teacherName ?? ch.authorName,
         status: "moved",
         note: ch.message,
       })
@@ -82,7 +91,7 @@ export async function getDaySlots(groupName: string, dateIso: string): Promise<D
     if (removed.has(s.id)) continue
     // замена аудитории без переноса времени
     const roomChange = changes.find(
-      (ch) => ch.date === dateIso && ch.kind === "MOVED" && !ch.newDate && ch.newRoom && s.subjectName.startsWith(ch.subject)
+      (ch) => ch.date === dateIso && isRoomChange(ch) && ch.newRoom && matchSlot(s, ch.subject)
     )
     if (roomChange) {
       result.push({

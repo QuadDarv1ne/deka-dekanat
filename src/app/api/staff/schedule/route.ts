@@ -99,6 +99,18 @@ export async function POST(req: NextRequest) {
   if (date < mskNow().date) {
     return NextResponse.json({ error: "Нельзя менять расписание прошедшего дня" }, { status: 400 });
   }
+  if (kind === "MOVED") {
+    if (!newDate) return NextResponse.json({ error: "Укажите дату, на которую переносится пара" }, { status: 400 });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
+      return NextResponse.json({ error: "Новая дата должна быть в формате ГГГГ-ММ-ДД" }, { status: 400 });
+    }
+    if (newDate < date) {
+      return NextResponse.json({ error: "Нельзя перенести пару на более раннюю дату" }, { status: 400 });
+    }
+  }
+  if (newStartMin !== null && (newStartMin < 0 || newStartMin > 1439)) {
+    return NextResponse.json({ error: "Некорректное время начала пары" }, { status: 400 });
+  }
 
   let message = "";
   if (kind === "CANCELLED") {
