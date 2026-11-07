@@ -185,7 +185,7 @@ scripts/start-prod.mjs        # самодостаточный старт про
 src/app/page.tsx              # единственный маршрут: вход → кабинет (SPA-навигация)
 src/app/verify                # публичная проверка подлинности справки (без входа)
 src/app/download              # публичная страница скачивания архива проекта (без входа)
-src/app/api/…                 # home, schedule, grades, requests, notifications, assistant, export,
+src/app/api/                  # home, schedule, grades, requests, notifications, assistant, export,
                               # backup + restore (полная копия базы), health, staff/*
 src/lib/backup-core.ts        # общее ядро валидации/восстановления копии (API + CLI)
 src/components/login-screen   # экран входа с демо-аккаунтами
