@@ -22,15 +22,6 @@ const humanDate = (d: Date) => `${d.getUTCDate()} ${RU_MONTHS[d.getUTCMonth()]}`
 const wdOf = (d: Date) => (d.getUTCDay() === 0 ? 7 : d.getUTCDay()) // 1..7
 const dateAt = (y: number, m: number, day: number) => new Date(Date.UTC(y, m, day, 12))
 
-/** ближайшая дата с нужным днём недели, начиная с завтра */
-function nextWeekday(from: Date, targetWd: number): Date {
-  for (let i = 1; i <= 7; i++) {
-    const d = addDays(from, i)
-    if (wdOf(d) === targetWd) return d
-  }
-  return from
-}
-
 async function main() {
   console.log('Наполняем базу вымышленными данными…')
 
