@@ -9,6 +9,9 @@ import { mskNow, humanDate, addDaysIso, minutesToHHMM } from "@/lib/time";
  * Все студенты группы сразу получают уведомление.
  */
 
+/** Время начала пары по умолчанию, если при переносе его не указали (09:00). */
+const DEFAULT_PAIR_START_MIN = 540;
+
 export async function GET(req: Request) {
   const auth = await requireStaff();
   if (!auth.ok) return auth.res;
@@ -68,7 +71,7 @@ export async function POST(req: NextRequest) {
     subject?: string;
     kind?: string;
     newDate?: string;
-    newStartMin?: number;
+    newStartMin?: number | string | null;
     newRoom?: string;
     reason?: string;
   };
@@ -84,7 +87,13 @@ export async function POST(req: NextRequest) {
   const kind = String(body.kind ?? "");
   const reason = String(body.reason ?? "").trim().slice(0, 300);
   const newDate = body.newDate ? String(body.newDate).slice(0, 10) : null;
-  const newStartMin = Number.isFinite(Number(body.newStartMin)) ? Number(body.newStartMin) : null;
+  // null/""/undefined — время не задано; иначе число. Number(null) === 0,
+  // поэтому проверяем на пустоту явно, иначе пара уезжала бы на 00:00.
+  const rawStartMin =
+    body.newStartMin === undefined || body.newStartMin === null || body.newStartMin === ""
+      ? null
+      : Number(body.newStartMin);
+  const newStartMin = rawStartMin !== null && Number.isFinite(rawStartMin) ? rawStartMin : null;
   const newRoom = body.newRoom ? String(body.newRoom).trim().slice(0, 60) : null;
 
   if (!groupName || !date || !subject) {
@@ -117,7 +126,7 @@ export async function POST(req: NextRequest) {
     message = `Занятие "${subject}" ${humanDate(date, { withWeekday: true })} отменено.`;
   } else if (kind === "MOVED") {
     if (!newDate) return NextResponse.json({ error: "Укажите дату, на которую переносится пара" }, { status: 400 });
-    const t = newStartMin ? minutesToHHMM(newStartMin) : "09:00";
+    const t = minutesToHHMM(newStartMin ?? DEFAULT_PAIR_START_MIN);
     message = `Занятие "${subject}" ${humanDate(date, { short: true })} перенесено на ${humanDate(newDate, { short: true })}, ${t}${newRoom ? `, ауд. ${newRoom}` : ""}.`;
   } else {
     if (!newRoom) return NextResponse.json({ error: "Укажите новую аудиторию" }, { status: 400 });
@@ -134,7 +143,7 @@ export async function POST(req: NextRequest) {
       message,
       newDate: kind === "MOVED" ? newDate : null,
       newStartMin: kind === "MOVED" ? newStartMin : null,
-      newRoom: kind === "ROOM" ? newRoom : kind === "MOVED" ? newRoom : null,
+      newRoom: kind === "ROOM" || kind === "MOVED" ? newRoom : null,
       authorName: session.name,
     },
   });

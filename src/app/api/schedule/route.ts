@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStudent } from "@/lib/api-helpers";
-import { getDaySlots, semesterWeek } from "@/lib/schedule";
+import { getDaysSlots, semesterWeek, type DaySlot } from "@/lib/schedule";
 import { mskNow, humanDate, minutesToHHMM, weekStartIso, addDaysIso, WD_SHORT } from "@/lib/time";
 
 /** Недельное расписание группы студента с переносами и отменами. ?week=N — смещение в неделях. */
@@ -30,12 +30,15 @@ export async function GET(req: Request) {
     human: string;
     isToday: boolean;
     isPast: boolean;
-    slots: Awaited<ReturnType<typeof getDaySlots>>;
+    slots: DaySlot[];
   }[] = [];
 
-  for (let i = 0; i < 6; i++) {
-    const dateIso = addDaysIso(mondayIso, i);
-    const slots = await getDaySlots(user.student.groupName, dateIso);
+  // один батч-запрос на всю неделю вместо двух запросов на каждый день
+  const dateIsos = Array.from({ length: 6 }, (_, i) => addDaysIso(mondayIso, i));
+  const slotsByDate = await getDaysSlots(user.student.groupName, dateIsos);
+
+  for (const dateIso of dateIsos) {
+    const slots = slotsByDate.get(dateIso) ?? [];
     const wd = new Date(`${dateIso}T12:00:00.000Z`).getUTCDay();
     days.push({
       dateIso,

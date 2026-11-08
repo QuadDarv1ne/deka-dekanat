@@ -129,6 +129,34 @@ export function useApi<T>(url: string | null) {
   return { data, error, loading, reload, cachedAt };
 }
 
+/**
+ * Стирает локальные слепки данных на устройстве.
+ * Вызывается при выходе и входе: иначе на общем компьютере следующий человек
+ * увидит в офлайн-режиме кэш предыдущего пользователя, а service worker
+ * отдаст сохранённую страницу кабинета с его именем.
+ */
+export async function clearApiCache(): Promise<void> {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(CACHE_PREFIX)) localStorage.removeItem(key);
+    }
+  } catch {
+    // localStorage может быть недоступен (приватный режим, запрет хранилища)
+  }
+  try {
+    if (typeof caches !== "undefined") {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k.startsWith("deka-")).map((k) => caches.delete(k)));
+    }
+  } catch {
+    // Cache API есть не везде (и только в защищённом контексте)
+  }
+  fallbackUrls.clear();
+  fallbackSnapshot = { active: false, since: null };
+  emitFallback();
+}
+
 /** POST/PATCH-запрос с JSON-телом; возвращает данные или бросает ошибку с текстом API. */
 export async function apiSend<T = unknown>(url: string, method: "POST" | "PATCH", body?: unknown): Promise<T> {
   let res: Response;

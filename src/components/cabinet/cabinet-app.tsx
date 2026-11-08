@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { CabinetShell, type CabinetUserInfo } from "@/components/cabinet/cabinet-shell";
+import { clearApiCache } from "@/components/cabinet/use-api";
 import { NotificationsPanel } from "@/components/cabinet/notifications-panel";
 import { AssistantPanel } from "@/components/cabinet/assistant-panel";
 import { StudentHome } from "@/components/cabinet/sections/student-home";
@@ -41,6 +42,9 @@ export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initial
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
+      // стираем локальные слепки данных: на общем устройстве они не должны
+      // остаться после смены пользователя
+      await clearApiCache();
       window.location.replace("/");
     }
   }
@@ -83,10 +87,7 @@ export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initial
 
       <NotificationsPanel
         open={notifOpen}
-        onOpenChange={(open) => {
-          setNotifOpen(open);
-          if (!open) setUnread((u) => u);
-        }}
+        onOpenChange={setNotifOpen}
         onUnreadChange={setUnread}
         onNavigate={(target) => {
           setNotifOpen(false);

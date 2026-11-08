@@ -26,7 +26,8 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // maximumScale не ограничиваем: запрет масштабирования ломает доступность
+  // (WCAG 1.4.4) — людям с плохим зрением нужно увеличивать страницу.
 };
 
 export default function RootLayout({
