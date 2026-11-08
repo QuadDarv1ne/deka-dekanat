@@ -23,6 +23,9 @@ jobs:
       - name: Линт
         run: bun run lint
 
+      - name: Быстрые проверки (время, ICS, политика статусов, часы, архитектура)
+        run: bun run test:unit && bun run test:arch
+
       - name: Сборка production-версии
         env:
           # DATABASE_URL нужен только для генерации Prisma-клиента на этапе сборки
@@ -49,6 +52,9 @@ jobs:
 
       - name: Линт
         run: npm run lint
+
+      - name: Быстрые проверки (время, ICS, политика статусов, часы, архитектура)
+        run: npm run test:unit && npm run test:arch
 
       - name: Сборка production-версии
         env:

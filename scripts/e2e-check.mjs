@@ -128,6 +128,32 @@ async function main() {
   const expBody = await exp.json();
   check("экспорт личных данных студента работает", exp.ok && expBody.format === "deka-personal-data", `HTTP ${exp.status}`);
 
+  // 10) Серверные часы ассистента: вопрос о времени не уходит в модель
+  const clock = await fetch(`${BASE}/api/assistant`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", cookie: student.cookie },
+    body: JSON.stringify({ message: "Сколько сейчас времени в Москве?" }),
+  });
+  const clockBody = await clock.json();
+  check(
+    "ассистент отвечает о времени по серверным часам",
+    clock.ok && clockBody.provider === "clock" && /МСК/.test(clockBody.reply ?? ""),
+    clockBody.error || clockBody.provider
+  );
+
+  // 11) Журнал аудита включён в бэкап и пополняется при действиях
+  check("бэкап содержит журнал аудита", typeof counts1.auditLogs === "number", JSON.stringify(counts1.auditLogs));
+  check("аудит фиксирует создание заявки", counts2.auditLogs > counts1.auditLogs, `${counts1.auditLogs} → ${counts2.auditLogs}`);
+
+  // 12) Заявки сотрудника содержат поле version (оптимистичная блокировка)
+  const staffList = await fetch(`${BASE}/api/staff/requests`, { headers: { cookie: staff.cookie } });
+  const staffListBody = await staffList.json();
+  check(
+    "у заявок сотрудника есть поле version",
+    staffList.ok && staffListBody.requests?.every((r) => typeof r.version === "number"),
+    `HTTP ${staffList.status}`
+  );
+
   // Итог
   console.log(`\nИтог: ${passed} проверок пройдено${failures.length ? `, НЕ ПРОЙДЕНО: ${failures.length}` : " — всё в порядке."}`);
   if (failures.length) {

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "predev": "node scripts/ensure-db-env.mjs prisma db push --accept-data-loss && node scripts/ensure-db-env.mjs tsx scripts/seed.ts",
+    "predev": "node scripts/ensure-db-env.mjs prisma db push --accept-data-loss && node scripts/ensure-db-env.mjs tsx scripts/seed.ts --force",
     "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "node scripts/start-prod.mjs",
     "postinstall": "prisma generate",

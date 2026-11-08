@@ -44,13 +44,16 @@ next-env.d.ts
 local-*
 .claude
 .z-ai-config
+
+# журналы и приложенные вручную архивы — в репозиторий не попадают
 *.log
-dev.log
-dev.out.log
-test
+/test/
 prompt
 
-server.log
+# вручную приложенные архивы исходников (не путать со сборкой public/deka-dekanat-*)
+/*.zip
+/*.tar.gz
+
 # Skills directory
 /skills/
 # секреты окружения — в репозиторий не попадают
