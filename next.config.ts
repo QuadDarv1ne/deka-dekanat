@@ -14,9 +14,6 @@ const nextConfig: NextConfig = {
   env: { DATABASE_URL: resolvedDbUrl },
   /* config options here */
   allowedDevOrigins: ["127.0.0.1"],
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   reactStrictMode: false,
   // убираем плавающий индикатор dev-режима (мешает на скриншотах прототипа)
   devIndicators: false,

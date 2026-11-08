@@ -5,6 +5,7 @@ import { Loader2, Lock, LogIn, ShieldCheck, Sparkles, User2 } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { clearApiCache } from "@/components/cabinet/use-api";
 
 const DEMO_ACCOUNTS = [
   { login: "student1", label: "Студент — Ковалёва А. С.", hint: "2 курс, ПИ-231, ИТ-факультет" },
@@ -34,7 +35,9 @@ export function LoginScreen() {
         setError(data.error ?? "Не удалось войти");
         return;
       }
-      // Полная перезагрузка: серверный компонент отдаст кабинет уже с сессией
+      // Полная перезагрузка: серверный компонент отдаст кабинет уже с сессией.
+      // Перед этим стираем слепки предыдущего пользователя на этом устройстве.
+      await clearApiCache();
       window.location.replace("/");
     } catch {
       setError("Ошибка сети. Попробуйте ещё раз.");

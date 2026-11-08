@@ -18,16 +18,24 @@ export const SESSION_COOKIE = 'deka_session'
 const SESSION_DAYS = 7
 
 /** Fallback-секрет: читаем db/auth-secret.txt, при отсутствии — создаём случайный. */
+let cachedFallbackSecret: string | null = null
 function fileFallbackSecret(): string {
+  // Кэш в памяти процесса: файл читается один раз, а не на каждый запрос
+  // (secretKey вызывается при каждой проверке сессии).
+  if (cachedFallbackSecret) return cachedFallbackSecret
   try {
     const file = path.join(process.cwd(), 'db', 'auth-secret.txt')
     if (fs.existsSync(file)) {
       const s = fs.readFileSync(file, 'utf8').trim()
-      if (s.length >= 32) return s
+      if (s.length >= 32) {
+        cachedFallbackSecret = s
+        return s
+      }
     }
     const generated = randomBytes(32).toString('hex')
     fs.mkdirSync(path.dirname(file), { recursive: true })
     fs.writeFileSync(file, generated, { mode: 0o600 })
+    cachedFallbackSecret = generated
     return generated
   } catch {
     return ''

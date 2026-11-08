@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -35,10 +35,18 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
+/**
+ * Логирование SQL. По умолчанию пишем только ошибки: подробный лог каждого
+ * запроса полезен при отладке, но в продакшене это лишний шум в stdout и
+ * заметная нагрузка на горячих маршрутах. Включается PRISMA_LOG_QUERIES=1.
+ */
+const prismaLog: Prisma.LogLevel[] =
+  process.env.PRISMA_LOG_QUERIES === '1' ? ['query', 'info', 'warn', 'error'] : ['error']
+
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ['query'],
+    log: prismaLog,
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
