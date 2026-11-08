@@ -3,6 +3,15 @@ services:
     build: .
     container_name: deka-prototype
     restart: unless-stopped
+    init: true
+    # Минимальные привилегии: приложение не должно получать новых прав и
+    # возможностей ядра — контейнеру достаточно сетевого порта и тома с базой.
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     ports:
       - "3000:3000"
     environment:

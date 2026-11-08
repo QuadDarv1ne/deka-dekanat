@@ -86,10 +86,82 @@ export function relativeTimeTo(minutesOfDay: number): string {
   return 'уже прошло'
 }
 
+/** Календарная дата (YYYY-MM-DD) момента времени по московскому времени. */
+export function mskDateIso(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(d) : d
+  if (Number.isNaN(date.getTime())) return ''
+  return new Date(date.getTime() + MSK_OFFSET_MIN * 60000).toISOString().slice(0, 10)
+}
+
+/**
+ * Текущий семестр по московской дате.
+ * Осенний: 1 сентября — декабрь (январь — ещё зимняя сессия),
+ * весенний: 1 февраля — июнь, август — каникулы перед новым учебным годом.
+ */
+export function semesterFor(dateIso: string): {
+  kind: 'autumn' | 'spring' | 'summer'
+  label: string
+  startIso: string
+  endIso: string
+  sessionLabel: string
+} {
+  const year = Number(dateIso.slice(0, 4))
+  const month = Number(dateIso.slice(5, 7))
+
+  if (month === 1) {
+    return {
+      kind: 'autumn',
+      label: 'Осенний семестр',
+      startIso: `${year - 1}-09-01`,
+      endIso: `${year - 1}-12-31`,
+      sessionLabel: 'Зимняя сессия',
+    }
+  }
+  if (month >= 2 && month <= 7) {
+    return {
+      kind: 'spring',
+      label: 'Весенний семестр',
+      startIso: `${year}-02-01`,
+      endIso: `${year}-06-30`,
+      sessionLabel: 'Летняя сессия',
+    }
+  }
+  if (month === 8) {
+    return {
+      kind: 'summer',
+      label: 'Летние каникулы',
+      startIso: `${year}-09-01`,
+      endIso: `${year}-12-31`,
+      sessionLabel: 'Сессия',
+    }
+  }
+  return {
+    kind: 'autumn',
+    label: 'Осенний семестр',
+    startIso: `${year}-09-01`,
+    endIso: `${year}-12-31`,
+    sessionLabel: 'Зимняя сессия',
+  }
+}
+
+/** Сколько календарных дней действует выданная справка. */
+export const DOC_VALID_DAYS = 30
+
+/**
+ * Последний день действия документа: дата выдачи (по МСК) + 30 календарных дней.
+ * Считаем именно календарные дни, а не "момент + 30 суток": иначе выдача
+ * поздно вечером сдвигала бы срок на день вперёд.
+ */
+export function docValidUntilIso(issuedAt: Date | string | null | undefined): string {
+  if (!issuedAt) return ''
+  const issuedIso = mskDateIso(issuedAt)
+  return issuedIso ? addDaysIso(issuedIso, DOC_VALID_DAYS) : ''
+}
+
 export function formatDateSafe(d: Date | string | null | undefined): string {
   if (!d) return ''
-  const iso = typeof d === 'string' ? d : d.toISOString()
-  return humanDate(iso.slice(0, 10))
+  const iso = mskDateIso(d)
+  return iso ? humanDate(iso) : ''
 }
 
 export function formatDateTimeSafe(d: Date | string | null | undefined): string {

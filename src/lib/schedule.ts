@@ -1,6 +1,6 @@
 import type { ScheduleChange, ScheduleSlot } from "@prisma/client";
 import { db } from "@/lib/db";
-import { mskNow, addDaysIso } from "@/lib/time";
+import { mskNow, addDaysIso, semesterFor } from "@/lib/time";
 
 /**
  * Расписание с учётом переносов и отмен.
@@ -164,7 +164,9 @@ export async function findNextClass(
   for (let i = 0; i < dates.length; i++) {
     for (const s of byDate.get(dates[i]) ?? []) {
       if (s.status === "cancelled") continue
-      if (i > 0 || s.startMin > minutes) {
+      // сегодня учитываем и пару, которая уже началась: карточка покажет
+      // «Идёт сейчас» с прогрессом, а не следующую пару через полдня
+      if (i > 0 || s.endMin > minutes) {
         return { dateIso: dates[i], slot: s }
       }
     }
@@ -172,12 +174,11 @@ export async function findNextClass(
   return null
 }
 
-/** Номер учебной недели семестра (старт — 1 сентября текущего учебного года). */
+/** Номер учебной недели текущего семестра (осеннего или весеннего). */
 export function semesterWeek(todayIso: string, acYear: number): { week: number; total: number } {
-  void acYear // считаем от текущего учебного года, параметр оставлен для совместимости
-  const y = Number(todayIso.slice(0, 4))
-  const academicYear = Number(todayIso.slice(5, 7)) >= 8 ? y : y - 1
-  const start = new Date(`${academicYear}-09-01T12:00:00.000Z`)
+  void acYear // параметр оставлен для совместимости: семестр вычисляется по дате
+  const { startIso } = semesterFor(todayIso)
+  const start = new Date(`${startIso}T12:00:00.000Z`)
   const today = new Date(`${todayIso}T12:00:00.000Z`)
   const days = Math.floor((today.getTime() - start.getTime()) / 86400000)
   const week = days < 0 ? 1 : Math.max(1, Math.min(16, Math.floor(days / 7) + 1))

@@ -21,7 +21,7 @@ export async function GET() {
   const auth = await requireStaff();
   if (!auth.ok) return auth.res;
 
-  const [users, studentProfiles, requestTypes, scheduleSlots, scheduleChanges, grades, examItems, announcements, serviceRequests, requestEvents, notifications, assistantMessages] =
+  const [users, studentProfiles, requestTypes, scheduleSlots, scheduleChanges, grades, examItems, announcements, serviceRequests, requestEvents, notifications, assistantMessages, auditLogs] =
     await Promise.all([
       db.user.findMany({ orderBy: { createdAt: "asc" } }),
       db.studentProfile.findMany(),
@@ -35,6 +35,7 @@ export async function GET() {
       db.requestEvent.findMany({ orderBy: { createdAt: "asc" } }),
       db.notification.findMany({ orderBy: { createdAt: "asc" } }),
       db.assistantMessage.findMany({ orderBy: { createdAt: "asc" } }),
+      db.auditLog.findMany({ orderBy: { createdAt: "asc" } }),
     ]);
 
   const counts = {
@@ -50,11 +51,12 @@ export async function GET() {
     requestEvents: requestEvents.length,
     notifications: notifications.length,
     assistantMessages: assistantMessages.length,
+    auditLogs: auditLogs.length,
   };
 
   const payload = {
     format: "deka-backup",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     counts,
     notice:
@@ -73,6 +75,7 @@ export async function GET() {
       requestEvents,
       notifications,
       assistantMessages,
+      auditLogs,
     },
   };
 

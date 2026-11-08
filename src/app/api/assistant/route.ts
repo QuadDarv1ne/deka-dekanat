@@ -5,6 +5,7 @@ import { requireStudent } from "@/lib/api-helpers";
 import { getDaySlots, findNextClass } from "@/lib/schedule";
 import { summarizeGrades, type SubjectSummary } from "@/lib/grades";
 import { mskNow, humanDate, addDaysIso, minutesToHHMM } from "@/lib/time";
+import { clockAnswer } from "@/lib/clock";
 
 /**
  * ИИ-ассистент "Дека". Отвечает на вопросы студента, опираясь ТОЛЬКО на его данные:
@@ -137,6 +138,15 @@ export async function POST(req: NextRequest) {
 
   const user = await db.user.findUnique({ where: { id: session.uid }, include: { student: true } });
   if (!user?.student) return NextResponse.json({ error: "Профиль студента не найден" }, { status: 404 });
+
+  // Вопрос о текущем времени отвечаем сразу по системным часам — модели
+  // не знают настоящего времени и могли бы его выдумать.
+  const clock = clockAnswer(message);
+  if (clock) {
+    await db.assistantMessage.create({ data: { userId: user.id, role: "user", content: message } });
+    await db.assistantMessage.create({ data: { userId: user.id, role: "assistant", content: clock } });
+    return NextResponse.json({ ok: true, reply: clock, degraded: false, provider: "clock" });
+  }
 
   const context = await buildContext(user.id, user.student.groupName, user.student.faculty);
 

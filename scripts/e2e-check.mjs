@@ -98,7 +98,7 @@ async function main() {
   const counts2 = (await (await fetch(`${BASE}/api/backup`, { headers: { cookie: staff.cookie } })).json()).counts;
   check("после мутации заявок стало на 1 больше", counts2.serviceRequests === counts1.serviceRequests + 1, `${counts1.serviceRequests} → ${counts2.serviceRequests}`);
 
-  // 6) Некорректный файл отказаывается (формат не тот)
+  // 6) Некорректный файл отклоняется (формат не тот)
   const bad = await fetch(`${BASE}/api/restore`, {
     method: "POST",
     headers: { "Content-Type": "application/json", cookie: staff.cookie },

@@ -1,8 +1,12 @@
 {
+  "id": "/",
   "name": "Дека — цифровой деканат (концепт)",
   "short_name": "Дека",
   "description": "Концепт личного кабинета студента: расписание, оценки, заявки и справки, объявления и ИИ-ассистент.",
+  "lang": "ru",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#fafaf7",
   "theme_color": "#0f766e",

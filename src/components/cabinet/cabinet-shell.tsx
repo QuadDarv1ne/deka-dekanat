@@ -137,7 +137,6 @@ export function CabinetShell({ user, section, onNavigate, unread, onOpenNotifica
       {/* ── Десктоп: боковая панель ─────────────────────────────── */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r bg-sidebar px-4 py-5 lg:flex">
         <button type="button" onClick={() => onNavigate(isStaff ? "requests" : "home")} className="mb-6 flex items-center gap-2.5 px-2 text-left">
-          { }
           <img src="/icon.svg" alt="Логотип Дека" className="h-9 w-9" />
           <span>
             <span className="block text-lg font-bold leading-none">Дека</span>
@@ -200,7 +199,6 @@ export function CabinetShell({ user, section, onNavigate, unread, onOpenNotifica
       {/* ── Мобильная шапка ─────────────────────────────────────── */}
       <header className="sticky top-0 z-40 flex items-center gap-2 border-b bg-background/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
         <button type="button" onClick={() => onNavigate(isStaff ? "requests" : "home")} className="flex items-center gap-2">
-          { }
           <img src="/icon.svg" alt="Логотип Дека" className="h-8 w-8" />
           <span className="text-base font-bold">Дека</span>
         </button>

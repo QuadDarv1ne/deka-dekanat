@@ -126,7 +126,8 @@ model ServiceRequest {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   typeCode     String
   typeTitle    String
-  status       String   @default("NEW") // NEW | IN_PROGRESS | READY | DONE | REJECTED
+  status       String   @default("NEW") // NEW | IN_PROGRESS | READY | DONE | REJECTED | CANCELLED
+  version      Int      @default(1) // оптимистичная блокировка: растёт при каждом изменении
   comment      String? // комментарий студента
   staffComment String? // комментарий деканата
   dueDate      DateTime? // ожидаемая готовность
@@ -183,4 +184,24 @@ model AssistantMessage {
   role      String // user | assistant
   content   String
   createdAt DateTime @default(now())
+}
+
+// ───────────────────────── Аудит действий ─────────────────────────
+// Журнал значимых действий в кабинете: смена статуса заявки, выдача
+// документа, изменение расписания и т.п. Пишется в той же транзакции,
+// что и само изменение, чтобы журнал не расходился с данными.
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String? // кто выполнил действие (может быть пусто для системных)
+  actorName String // ФИО на момент действия — журнал не должен «плыть» при переименовании
+  actorRole String // STUDENT | STAFF
+  action    String // код действия: request.status_changed, request.cancelled, …
+  entityId  String // id затронутой сущности
+  metadata  String   @default("{}") // JSON-строка с деталями (SQLite не имеет jsonb)
+  createdAt DateTime @default(now())
+
+  @@index([entityId])
+  @@index([action])
+  @@index([createdAt])
 }

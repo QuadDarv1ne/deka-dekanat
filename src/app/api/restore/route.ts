@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/api-helpers";
-import { restoreBackupInto, validateBackupData } from "@/lib/backup-core";
+import { restoreBackupInto, validateBackupData, BACKUP_VERSION } from "@/lib/backup-core";
 
 /**
  * Восстановление базы из полной резервной копии (файл формата "deka-backup",
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  if (typeof body.version === "number" && body.version > 1) {
+  if (typeof body.version === "number" && body.version > BACKUP_VERSION) {
     return NextResponse.json({ error: "Копия сделана более новой версией \"Дека\" — обновите приложение" }, { status: 400 });
   }
   if (body.confirm !== "REPLACE") {

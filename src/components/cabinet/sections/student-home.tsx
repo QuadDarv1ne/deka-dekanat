@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared";
 import { NextClassCard } from "@/components/cabinet/next-class-card";
 import { useApi } from "@/components/cabinet/use-api";
-import { relativeDay } from "@/lib/time";
+import { mskDateIso, relativeDay } from "@/lib/time";
 import { ANNOUNCEMENT_CATEGORY } from "@/components/shared";
 
 type HomeData = {
@@ -188,7 +188,7 @@ export function StudentHome({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] font-semibold">{d.title}</span>
                   <span className="block text-[12px] text-muted-foreground">
-                    до {relativeDay(new Date(d.deadline).toISOString().slice(0, 10))}
+                    до {relativeDay(mskDateIso(d.deadline))}
                   </span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -228,7 +228,7 @@ export function StudentHome({
                     {a.title}
                   </p>
                   <p className="mt-0.5 text-[12px] text-muted-foreground">
-                    {relativeDay(a.createdAt.slice(0, 10))}
+                    {relativeDay(mskDateIso(a.createdAt))}
                   </p>
                 </div>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${ANNOUNCEMENT_CATEGORY[a.category]?.cls ?? "bg-muted text-muted-foreground"}`}>

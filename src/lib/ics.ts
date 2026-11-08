@@ -24,9 +24,41 @@ export type IcsWeek = {
   }[];
 };
 
+const BACKSLASH = String.fromCharCode(92);
+
 /** Экранирование текста по RFC 5545. */
 function esc(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return text
+    .replace(new RegExp(BACKSLASH + BACKSLASH, 'g'), BACKSLASH + BACKSLASH)
+    .replace(/;/g, BACKSLASH + ';')
+    .replace(/,/g, BACKSLASH + ',')
+    .replace(new RegExp(String.fromCharCode(13) + '?' + String.fromCharCode(10), 'g'), BACKSLASH + 'n');
+}
+
+/**
+ * Перенос длинной строки по RFC 5545: не больше 75 октетов UTF-8,
+ * продолжение начинается с пробела. Считаем именно байты, а не символы:
+ * кириллица в UTF-8 занимает по два байта.
+ */
+function foldLine(line: string): string[] {
+  const encoder = new TextEncoder();
+  const parts: string[] = [];
+  let current = "";
+  let bytes = 0;
+
+  for (const char of line) {
+    const charBytes = encoder.encode(char).length;
+    if (bytes + charBytes > 75) {
+      parts.push(current);
+      current = ` ${char}`;
+      bytes = 1 + charBytes;
+    } else {
+      current += char;
+      bytes += charBytes;
+    }
+  }
+  parts.push(current);
+  return parts;
 }
 
 /** "2026-11-05" + "09:30" → "20261105T093000" (плавающее локальное время). */
@@ -66,7 +98,9 @@ export function buildIcs(opts: { calName: string; weeks: IcsWeek[] }): string {
 
         lines.push(
           "BEGIN:VEVENT",
-          `UID:${s.id}@deka.example`,
+          // UID уникален для конкретной даты: один и тот же слот повторяется
+          // каждую неделю, и без даты календари склеивали бы события.
+          `UID:${s.id}-${day.dateIso.replace(/-/g, "")}@deka.example`,
           `DTSTAMP:${now}`,
           `DTSTART:${dt(day.dateIso, s.start)}`,
           `DTEND:${dt(day.dateIso, s.end)}`,
@@ -85,6 +119,6 @@ export function buildIcs(opts: { calName: string; weeks: IcsWeek[] }): string {
   }
 
   lines.push("END:VCALENDAR");
-  // RFC 5545 требует CRLF-переводы строк
-  return lines.join("\r\n");
+  // RFC 5545: строки не длиннее 75 октетов и CRLF-переводы строк
+  return `${lines.flatMap(foldLine).join("\r\n")}\r\n`;
 }

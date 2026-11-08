@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ANNOUNCEMENT_CATEGORY } from "@/components/shared";
 import { useApi, apiSend } from "@/components/cabinet/use-api";
-import { formatDateTimeSafe, formatDateSafe } from "@/lib/time";
+import { formatDateTimeSafe, formatDateSafe, mskTodayIso } from "@/lib/time";
 
 type Announcement = {
   id: string;
@@ -125,7 +125,7 @@ export function StaffAnnouncements() {
             </div>
             <div>
               <Label htmlFor="ann-deadline">Дедлайн (необязательно)</Label>
-              <Input id="ann-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="mt-1.5" min={new Date().toISOString().slice(0, 10)} />
+              <Input id="ann-deadline" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="mt-1.5" min={mskTodayIso()} />
             </div>
           </div>
           <div className="flex items-center justify-between gap-3">

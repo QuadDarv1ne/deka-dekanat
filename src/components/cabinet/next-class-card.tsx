@@ -44,8 +44,16 @@ export function NextClassCard({ data, onOpenSchedule }: { data: NextClassData | 
       const minutesToStart = hasTime && data.dateIso === date ? startMin - minutes : 24 * 60;
       const inClass = hasTime && data.dateIso === date && minutes >= startMin && minutes < endMin;
       const elapsed = inClass ? (minutes - startMin) / (endMin - startMin) : 0;
+      const label =
+        data.dateIso !== date || !hasTime
+          ? data.human ?? relativeDay(data.dateIso)
+          : minutes >= endMin
+            ? "Завершилась"
+            : minutes >= startMin
+              ? "Идёт сейчас"
+              : countdownText(minutesToStart);
       setState({
-        label: data.dateIso === date && hasTime ? countdownText(minutesToStart) : data.human ?? relativeDay(data.dateIso),
+        label,
         progress: inClass ? elapsed : null,
         isToday: data.dateIso === date,
       });

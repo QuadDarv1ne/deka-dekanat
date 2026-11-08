@@ -27,6 +27,7 @@ import { EmptyState, StatusBadge, REQUEST_STATUS } from "@/components/shared";
 import { useApi, apiSend } from "@/components/cabinet/use-api";
 import { QRCodeSVG } from "@/components/cabinet/qr-code";
 import { CertificateDialog, type CertificateProfile } from "@/components/cabinet/certificate-view";
+import { docVerifyUrl } from "@/lib/doc-verify";
 import { formatDateTimeSafe, formatDateSafe } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -436,15 +437,28 @@ export function StudentRequests({
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col items-center gap-3 pb-2">
-                <div className="rounded-2xl border bg-white p-3">
-                  <QRCodeSVG value={`DEKA-DOC|${showQrFor.number}|${showQrFor.docCode ?? ""}`} size={168} fileName={`deka-doc-${showQrFor.docCode ?? showQrFor.number}.png`} />
-                </div>
-                <p className="text-center text-[12px] leading-snug text-muted-foreground">
-                  Покажите этот код сотруднику деканата, чтобы получить документ. Код уникален и проверяется по базе.
-                </p>
-                <Badge variant="outline" className="font-mono">
-                  {showQrFor.docCode ?? showQrFor.number}
-                </Badge>
+                {showQrFor.docCode ? (
+                  <>
+                    <div className="rounded-2xl border bg-white p-3">
+                      <QRCodeSVG
+                        value={docVerifyUrl(showQrFor.number, showQrFor.docCode)}
+                        size={168}
+                        fileName={`deka-doc-${showQrFor.number}.png`}
+                      />
+                    </div>
+                    <p className="text-center text-[12px] leading-snug text-muted-foreground">
+                      QR открывает публичную страницу проверки подлинности. Сотруднику деканата назовите код выдачи —
+                      он сверяется с базой.
+                    </p>
+                    <Badge variant="outline" className="font-mono">
+                      {showQrFor.docCode}
+                    </Badge>
+                  </>
+                ) : (
+                  <p className="text-center text-[12.5px] leading-snug text-muted-foreground">
+                    Документ ещё не готов: код выдачи появится, когда деканат подготовит справку.
+                  </p>
+                )}
               </div>
             </>
           )}

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { BadgeCheck, FileSearch, ScanLine, ShieldX } from "lucide-react";
 import { db } from "@/lib/db";
-import { formatDateSafe } from "@/lib/time";
+import { docValidUntilIso, formatDateSafe } from "@/lib/time";
 
 /**
  * Публичная проверка подлинности справки (без входа в систему).
@@ -36,8 +36,10 @@ async function checkDoc(raw: string | undefined): Promise<VerifyResult> {
   if (dot < 1 || dot === value.length - 1) return { kind: "malformed" };
   const number = value.slice(0, dot).trim().toUpperCase();
   const code = value.slice(dot + 1).trim().toUpperCase();
-  // грубая защита от мусорных строк и сверхдлинного ввода
-  if (!/^[-А-ЯA-Z0-9]{3,32}$/.test(number) || !/^[A-Z0-9-]{4,32}$/.test(code)) return { kind: "notfound" };
+  // грубая защита от мусорных строк и сверхдлинного ввода:
+  // номер — буквы/цифры/дефис, код — формат DEKA-XXXX-XXXX (как выдаёт деканат)
+  if (!/^[-А-ЯA-Z0-9]{3,32}$/.test(number)) return { kind: "notfound" };
+  if (!/^DEKA-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return { kind: "notfound" };
 
   const request = await db.serviceRequest.findUnique({
     where: { number },
@@ -81,7 +83,7 @@ export default async function VerifyPage({ searchParams }: { searchParams: Promi
   const hasQuery = Boolean((doc ?? "").trim());
 
   const issuedAt = result.kind === "valid" ? result.request.readyAt ?? result.request.createdAt : null;
-  const validUntil = issuedAt ? formatDateSafe(new Date(new Date(issuedAt).getTime() + 30 * 86400000).toISOString()) : null;
+  const validUntil = issuedAt ? formatDateSafe(docValidUntilIso(issuedAt)) : null;
   const manualNumber = typeof doc === "string" && doc.includes(".") ? doc.split(".")[0] : "";
 
   return (

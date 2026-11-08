@@ -21,13 +21,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useApi } from "@/components/cabinet/use-api";
+import { clearApiCache, useApi } from "@/components/cabinet/use-api";
 import { QRCodeSVG } from "@/components/cabinet/qr-code";
 import type { CabinetUser } from "@/components/cabinet/cabinet-app";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mskTodayIso } from "@/lib/time";
+import { formatDateSafe, mskTodayIso, semesterFor } from "@/lib/time";
 
 type GradesLite = {
   summary: { gpa: number | null; averagePercent: number; subjectsCount: number; excellentCount: number; riskCount: number };
@@ -104,17 +104,16 @@ export function ProfileSection({
     return () => clearTimeout(t);
   }, []);
 
-  // прогресс семестра: 1 сентября текущего учебного года — 16 учебных недель
+  // прогресс текущего семестра (осенний/весенний), а не всего учебного года
+  const semester = semesterFor(today || mskTodayIso());
   const semesterProgress = (() => {
     if (!user.student) return 0;
-    const iso = today || mskTodayIso();
-    const year = Number(iso.slice(0, 4));
-    // учебный год начинается 1 сентября: до августа относимся к предыдущему
-    const academicYear = Number(iso.slice(5, 7)) >= 8 ? year : year - 1;
-    const start = new Date(`${academicYear}-09-01T12:00:00.000Z`);
-    const now = new Date(`${iso}T12:00:00.000Z`);
-    const days = Math.floor((now.getTime() - start.getTime()) / 86400000);
-    return Math.min(100, Math.max(3, Math.round((days / (16 * 7)) * 100)));
+    const start = new Date(`${semester.startIso}T12:00:00.000Z`);
+    const end = new Date(`${semester.endIso}T12:00:00.000Z`);
+    const now = new Date(`${today || mskTodayIso()}T12:00:00.000Z`);
+    const totalDays = Math.max(1, end.getTime() - start.getTime());
+    const passedDays = Math.min(totalDays, Math.max(0, now.getTime() - start.getTime()));
+    return Math.min(100, Math.max(0, Math.round((passedDays / totalDays) * 100)));
   })();
 
   const isStaff = user.role === "STAFF";
@@ -186,14 +185,16 @@ export function ProfileSection({
             <div>
               <div className="flex items-baseline justify-between text-[12.5px]">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <CalendarRange className="h-4 w-4 text-primary" /> Семестр
+                  <CalendarRange className="h-4 w-4 text-primary" /> {semester.label}
                 </span>
                 <span className="font-semibold tabular-nums">{semesterProgress}%</span>
               </div>
               <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-muted">
                 <div className="h-full rounded-full bg-gradient-to-r from-teal-500 to-teal-700" style={{ width: `${semesterProgress}%` }} />
               </div>
-              <p className="mt-1 text-[11px] text-muted-foreground">16 учебных недель с 1 сентября до зимней сессии</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                16 учебных недель: {formatDateSafe(semester.startIso)} — {formatDateSafe(semester.endIso)}
+              </p>
             </div>
 
             {grades ? (
@@ -334,8 +335,13 @@ export function ProfileSection({
             size="sm"
             className={cn("gap-1.5 text-destructive hover:text-destructive", "lg:hidden")}
             onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
-              window.location.replace("/");
+              try {
+                await fetch("/api/auth/logout", { method: "POST" });
+              } finally {
+                // на общем устройстве не оставляем слепки данных предыдущего пользователя
+                await clearApiCache();
+                window.location.replace("/");
+              }
             }}
           >
             <LogOut className="h-4 w-4" /> Выйти

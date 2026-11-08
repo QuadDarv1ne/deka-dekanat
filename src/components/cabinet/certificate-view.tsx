@@ -12,7 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { QRCodeSVG } from "@/components/cabinet/qr-code";
-import { formatDateSafe } from "@/lib/time";
+import { docVerifyUrl } from "@/lib/doc-verify";
+import { docValidUntilIso, formatDateSafe } from "@/lib/time";
 
 /** Данные студента, нужные для печатной формы (приходят из GET /api/requests). */
 export type CertificateProfile = {
@@ -42,23 +43,12 @@ const STUDY_FORM_INFLECT: Record<string, string> = {
 
 const COURSE_INFLECT = ["", "1-го", "2-го", "3-го", "4-го", "5-го", "6-го"];
 
-/**
- * Ссылка для QR на справке: публичная проверка подлинности /verify?doc=НОМЕР.КОД.
- * Справка рендерится только в браузере (диалог по клику), поэтому window доступен.
- * Если docCode ещё не выдан — фолбэк на старый текстовый формат payload.
- */
-function verifyUrl(request: CertificateRequest): string {
-  if (!request.docCode) return `DEKA-DOC|${request.number}|${request.docCode ?? ""}`;
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/verify?doc=${encodeURIComponent(`${request.number}.${request.docCode}`)}`;
-}
-
 /** Печатная форма справки: белая A4-страница с официальной вёрсткой. */
 export function CertificateSheet({ request, profile }: { request: CertificateRequest; profile: CertificateProfile }) {
   const issuedAt = request.readyAt ?? request.createdAt;
   const issued = formatDateSafe(issuedAt);
-  // срок действия — 30 дней от даты выдачи
-  const validUntil = formatDateSafe(new Date(new Date(issuedAt).getTime() + 30 * 86400000).toISOString());
+  // срок действия — 30 календарных дней от даты выдачи (по МСК)
+  const validUntil = formatDateSafe(docValidUntilIso(issuedAt));
   const studyForm = STUDY_FORM_INFLECT[profile.studyForm] ?? profile.studyForm.toLowerCase();
   const course = COURSE_INFLECT[profile.course] ?? `${profile.course}-го`;
 
@@ -104,15 +94,23 @@ export function CertificateSheet({ request, profile }: { request: CertificateReq
           </p>
         </div>
         <div className="flex flex-col items-center gap-1.5">
-          <div className="bg-white p-1.5">
-            <QRCodeSVG value={verifyUrl(request)} size={92} />
-          </div>
-          <p className="max-w-[150px] text-center font-mono text-[10px] leading-snug text-neutral-500">
-            Код проверки подлинности: {request.docCode ?? request.number}
-          </p>
-          <p className="max-w-[150px] text-center text-[9px] leading-snug text-neutral-400">
-            QR — проверка подлинности по коду
-          </p>
+          {request.docCode ? (
+            <>
+              <div className="bg-white p-1.5">
+                <QRCodeSVG value={docVerifyUrl(request.number, request.docCode)} size={92} />
+              </div>
+              <p className="max-w-[150px] text-center font-mono text-[10px] leading-snug text-neutral-500">
+                Код проверки подлинности: {request.docCode}
+              </p>
+              <p className="max-w-[150px] text-center text-[9px] leading-snug text-neutral-400">
+                QR ведёт на страницу проверки /verify
+              </p>
+            </>
+          ) : (
+            <p className="max-w-[150px] text-center text-[10px] leading-snug text-neutral-500">
+              Код проверки ещё не выдан — справка без QR-кода
+            </p>
+          )}
         </div>
       </div>
 

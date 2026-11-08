@@ -26,9 +26,18 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // изоляция окна от сторонних документов — защита от cross-window утечек
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "X-DNS-Prefetch-Control", value: "off" },
           // микрофон разрешён своему источнику — иначе не работает голосовой ввод в ИИ-ассистенте
           { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
         ],
+      },
+      {
+        // Ответы API содержат персональные данные — их нельзя кэшировать ни браузеру,
+        // ни промежуточным прокси. Это же дублируется в самих роутах (no-store).
+        source: "/api/:path*",
+        headers: [{ key: "Cache-Control", value: "private, no-store, max-age=0" }],
       },
     ];
   },

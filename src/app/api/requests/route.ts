@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomInt } from "node:crypto";
 import { db } from "@/lib/db";
 import { requireStudent } from "@/lib/api-helpers";
 import { mskNow } from "@/lib/time";
+import { canTransition } from "@/lib/request-policy";
+import { auditEntry, AUDIT } from "@/lib/audit";
 
 /** Заявки студента: список типов и своих заявок (GET), подача новой (POST). */
 
@@ -43,6 +46,7 @@ export async function GET() {
       typeCode: r.typeCode,
       typeTitle: r.typeTitle,
       status: r.status,
+      version: r.version,
       comment: r.comment,
       staffComment: r.staffComment,
       dueDate: r.dueDate,
@@ -64,7 +68,7 @@ export async function GET() {
 function randomCode(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let s = "";
-  for (let i = 0; i < 4; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  for (let i = 0; i < 4; i++) s += alphabet[randomInt(alphabet.length)];
   return s;
 }
 
@@ -112,20 +116,32 @@ export async function POST(req: NextRequest) {
 
   const dueDate = new Date(Date.now() + Math.max(1, type.processingDays) * 86400000);
 
-  const created = await db.serviceRequest.create({
-    data: {
-      number,
-      userId: session.uid,
-      typeCode: type.code,
-      typeTitle: type.title,
-      status: "NEW",
-      comment: comment || null,
-      dueDate,
-      history: {
-        create: { status: "NEW", authorName: session.name, comment: comment || null },
+  const created = await db.$transaction(async (tx) => {
+    const req = await tx.serviceRequest.create({
+      data: {
+        number,
+        userId: session.uid,
+        typeCode: type.code,
+        typeTitle: type.title,
+        status: "NEW",
+        comment: comment || null,
+        dueDate,
+        history: {
+          create: { status: "NEW", authorName: session.name, comment: comment || null },
+        },
       },
-    },
-    include: { history: true },
+      include: { history: true },
+    });
+    // аудит в той же транзакции, что и создание заявки
+    await tx.auditLog.create({
+      data: auditEntry(
+        { id: session.uid, name: session.name, role: session.role },
+        AUDIT.requestCreated,
+        req.id,
+        { number: req.number, typeCode: type.code }
+      ),
+    });
+    return req;
   });
 
   return NextResponse.json({
@@ -144,9 +160,11 @@ export async function POST(req: NextRequest) {
 
 /**
  * Отмена заявки студентом.
- * Свою заявку можно отменить, только пока деканат не начал/не закончил её:
- * статусы NEW и IN_PROGRESS. Готовые (READY), выданные (DONE), отклонённые
- * и уже отменённые — нельзя. Изоляция: ищем заявку строго по id И userId.
+ * Правило перехода вынесено в общую политику (src/lib/request-policy.ts):
+ * студент может отменить только свою неготовую заявку (NEW/IN_PROGRESS).
+ * Изоляция: ищем заявку строго по id И userId.
+ * Оптимистичная блокировка: если заявку успели изменить параллельно,
+ * условное обновление по version не сработает и вернём 409.
  */
 export async function PATCH(req: NextRequest) {
   const auth = await requireStudent();
@@ -166,31 +184,52 @@ export async function PATCH(req: NextRequest) {
   const request = await db.serviceRequest.findFirst({ where: { id, userId: session.uid } });
   if (!request) return NextResponse.json({ error: "Заявка не найдена" }, { status: 404 });
 
-  if (request.status !== "NEW" && request.status !== "IN_PROGRESS") {
+  if (!canTransition(session.role, request.status, "CANCELLED")) {
     return NextResponse.json(
       { error: "Отменить можно только заявку, которая ещё не готова — напишите в деканат, если нужна помощь" },
       { status: 400 }
     );
   }
 
-  const updated = await db.serviceRequest.update({
-    where: { id: request.id },
-    data: {
-      status: "CANCELLED",
-      history: {
-        create: { status: "CANCELLED", authorName: session.name, comment: "Заявка отменена студентом" },
-      },
-    },
-    include: { history: { orderBy: { createdAt: "asc" } } },
+  const result = await db.$transaction(async (tx) => {
+    // compare-and-swap по version: если заявку изменили параллельно, count = 0
+    const swapped = await tx.serviceRequest.updateMany({
+      where: { id: request.id, version: request.version, status: request.status },
+      data: { status: "CANCELLED", version: { increment: 1 } },
+    });
+    if (swapped.count === 0) return null;
+
+    await tx.requestEvent.create({
+      data: { requestId: request.id, status: "CANCELLED", authorName: session.name, comment: "Заявка отменена студентом" },
+    });
+    await tx.auditLog.create({
+      data: auditEntry(
+        { id: session.uid, name: session.name, role: session.role },
+        AUDIT.requestCancelled,
+        request.id,
+        { number: request.number, from: request.status }
+      ),
+    });
+    return tx.serviceRequest.findUnique({
+      where: { id: request.id },
+      include: { history: { orderBy: { createdAt: "asc" } } },
+    });
   });
+
+  if (!result) {
+    return NextResponse.json(
+      { error: "Заявка уже изменилась — обновите страницу и попробуйте снова" },
+      { status: 409 }
+    );
+  }
 
   return NextResponse.json({
     ok: true,
     request: {
-      id: updated.id,
-      number: updated.number,
-      status: updated.status,
-      history: updated.history.map((h) => ({
+      id: result.id,
+      number: result.number,
+      status: result.status,
+      history: result.history.map((h) => ({
         id: h.id,
         status: h.status,
         comment: h.comment,
