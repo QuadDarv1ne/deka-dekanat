@@ -38,6 +38,8 @@ type GradesData = {
     averagePercent: number;
   };
   rank: { rank: number; total: number; points: number } | null;
+  semesterLabel: string;
+  sessionLabel: string;
   subjects: Subject[];
   exams: {
     id: string;
@@ -75,7 +77,9 @@ export function StudentGrades() {
     <div className="animate-fade-up space-y-5">
       <div>
         <h1 className="text-xl font-bold tracking-tight">Успеваемость</h1>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">Текущий семестр, балльно-рейтинговая система</p>
+        <p className="mt-0.5 text-[13px] text-muted-foreground">
+          {data ? `${data.semesterLabel ?? "Текущий семестр"}, балльно-рейтинговая система` : "Текущий семестр, балльно-рейтинговая система"}
+        </p>
       </div>
 
       {error && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
@@ -195,7 +199,7 @@ export function StudentGrades() {
       {data && data.exams.length > 0 && (
         <section aria-labelledby="session-heading">
           <h2 id="session-heading" className="mb-2.5 text-[15px] font-bold tracking-tight">
-            Зимняя сессия
+            {data.sessionLabel ?? "Сессия"}
           </h2>
           <div className="space-y-2">
             {data.exams.map((e) => (

@@ -27,7 +27,7 @@ export async function GET() {
       where: {
         OR: [{ audience: "ALL" }, { audience: `GROUP:${groupName}` }, { audience: `FACULTY:${faculty}` }],
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
       take: 20,
     }),
     db.announcement.findMany({

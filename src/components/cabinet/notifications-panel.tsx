@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { AlarmClock, Bell, CalendarDays, CheckCheck, FileText, Info, Megaphone } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,8 @@ export function NotificationsPanel({
       const res = await apiSend<{ unread: number }>("/api/notifications", "PATCH", { all: true });
       onUnreadChange(res.unread);
       reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Не удалось отметить уведомления");
     } finally {
       setMarking(false);
     }

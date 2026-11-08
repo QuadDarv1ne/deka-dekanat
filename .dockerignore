@@ -1,0 +1,28 @@
+# Контекст сборки: не отправляем в образ лишнее и не рискуем утечкой секретов.
+node_modules
+.next
+out
+build
+
+# локальная база, снапшоты и секреты — данные конкретной установки
+db
+.env
+.env.*
+!.env.example
+cookies*.txt
+
+# журналы и служебные артефакты
+*.log
+dev*.log
+prod*.log
+tsconfig.tsbuildinfo
+next-env.d.ts
+
+# прочее окружение разработки
+.git
+.gitignore
+.github
+.vscode
+docs
+test
+*.zip

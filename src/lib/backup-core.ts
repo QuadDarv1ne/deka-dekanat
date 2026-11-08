@@ -14,6 +14,9 @@ import type { Prisma } from "@prisma/client";
 
 export type BackupRow = Record<string, unknown>;
 
+/** Актуальная версия формата копии: 2 — добавлен журнал аудита (auditLogs). */
+export const BACKUP_VERSION = 2;
+
 /** Порядок таблиц: удаление — дети первыми, создание — родители первыми. */
 export const BACKUP_DATE_KEYS: Record<string, string[]> = {
   users: ["createdAt", "updatedAt"],
@@ -28,7 +31,14 @@ export const BACKUP_DATE_KEYS: Record<string, string[]> = {
   requestEvents: ["createdAt"],
   notifications: ["readAt", "createdAt"],
   assistantMessages: ["createdAt"],
+  auditLogs: ["createdAt"],
 };
+
+/**
+ * Таблицы, которых может не быть в старых копиях: при восстановлении они
+ * просто останутся пустыми, а не приведут к отказу файла целиком.
+ */
+const OPTIONAL_TABLES = new Set(["auditLogs"]);
 
 /** ISO-строки из JSON → объекты Date там, где в схеме DateTime. */
 export function withDates(row: BackupRow, keys: string[]): BackupRow {
@@ -46,6 +56,8 @@ export function withDates(row: BackupRow, keys: string[]): BackupRow {
 export function validateBackupData(d: Record<string, unknown>): string | null {
   for (const table of Object.keys(BACKUP_DATE_KEYS)) {
     if (!Array.isArray(d[table])) {
+      // старые копии без журнала аудита допустимы — он просто останется пустым
+      if (OPTIONAL_TABLES.has(table)) continue;
       return `В файле нет таблицы ${table} — файл повреждён или усечён`;
     }
     const rows = d[table] as BackupRow[];
@@ -100,9 +112,10 @@ export async function restoreBackupInto(
   tx: Prisma.TransactionClient,
   d: Record<string, unknown>
 ): Promise<Record<string, number>> {
-  const row = (table: string) => (d[table] as BackupRow[]).map((r) => withDates(r, BACKUP_DATE_KEYS[table]));
+  const row = (table: string) => ((d[table] as BackupRow[] | undefined) ?? []).map((r) => withDates(r, BACKUP_DATE_KEYS[table]));
 
   // 1) Полная очистка (порядок важен из-за связей — как в scripts/seed.ts)
+  await tx.auditLog.deleteMany();
   await tx.assistantMessage.deleteMany();
   await tx.notification.deleteMany();
   await tx.requestEvent.deleteMany();
@@ -138,6 +151,8 @@ export async function restoreBackupInto(
     await tx.notification.createMany({ data: row("notifications") as Prisma.NotificationCreateManyInput[] });
   if ((d.assistantMessages as BackupRow[]).length)
     await tx.assistantMessage.createMany({ data: row("assistantMessages") as Prisma.AssistantMessageCreateManyInput[] });
+  if (row("auditLogs").length)
+    await tx.auditLog.createMany({ data: row("auditLogs") as Prisma.AuditLogCreateManyInput[] });
 
   return backupCounts(d);
 }

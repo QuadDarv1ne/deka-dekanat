@@ -5,18 +5,26 @@
  *  — навигация (страницы): сеть → кэш → offline.html;
  *  — статика (/_next/static, иконки, шрифты): кэш → сеть (с фоновым обновлением);
  *  — /api/*: ТОЛЬКО сеть, никогда не кэшируем (персональные данные).
+ *
+ * Обновление: новая версия воркера не активируется сама (skipWaiting вызывается
+ * только по сообщению APPLY_UPDATE от страницы). Так пользователь не теряет
+ * заполненную форму из-за внезапной перезагрузки — он подтверждает обновление.
+ *
+ * ВАЖНО: при изменении набора ресурсов или стратегий поднимите CACHE_VERSION —
+ * это инвалидирует старые кэши на устройствах пользователей.
  */
 
-const CACHE = "deka-static-v1";
+const CACHE_VERSION = "v2";
+const CACHE = `deka-static-${CACHE_VERSION}`;
 const PRECACHE = ["/offline.html", "/icon.svg", "/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE)
-      .then((cache) => cache.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
+});
+
+// страница просит применить обновление — только тогда активируем новый воркер
+self.addEventListener("message", (event) => {
+  if (event.data === "APPLY_UPDATE") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

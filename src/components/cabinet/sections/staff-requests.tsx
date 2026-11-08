@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, StatusBadge } from "@/components/shared";
 import { useApi, apiSend } from "@/components/cabinet/use-api";
-import { formatDateTimeSafe } from "@/lib/time";
+import { formatDateSafe, formatDateTimeSafe } from "@/lib/time";
+import { allowedTransitions } from "@/lib/request-policy";
 import { cn } from "@/lib/utils";
 
 type StaffRequest = {
@@ -17,6 +18,7 @@ type StaffRequest = {
   number: string;
   typeTitle: string;
   status: string;
+  version: number;
   comment: string | null;
   staffComment: string | null;
   dueDate: string | null;
@@ -51,16 +53,19 @@ export function StaffRequests() {
   const [rejectReason, setRejectReason] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
 
-  async function setStatus(id: string, status: string, comment?: string) {
-    setBusyId(id);
+  async function setStatus(r: StaffRequest, status: string, comment?: string) {
+    setBusyId(r.id);
     setActionError(null);
     try {
-      await apiSend("/api/staff/requests", "PATCH", { id, status, comment });
+      // передаём version: сервер отклонит устаревшее изменение (409), если
+      // заявку успел изменить кто-то другой
+      await apiSend("/api/staff/requests", "PATCH", { id: r.id, status, comment, version: r.version });
       setRejectFor(null);
       setRejectReason("");
       reload();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Не удалось обновить заявку");
+      reload();
     } finally {
       setBusyId(null);
     }
@@ -141,45 +146,52 @@ export function StaffRequests() {
                 </span>
                 {r.dueDate && r.status !== "DONE" && r.status !== "REJECTED" && r.status !== "CANCELLED" && (
                   <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400">
-                    <CalendarClock className="h-3.5 w-3.5" /> срок: {new Date(r.dueDate).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}
+                    <CalendarClock className="h-3.5 w-3.5" /> срок: {formatDateSafe(r.dueDate)}
                   </span>
                 )}
               </div>
 
-              {r.status !== "DONE" && r.status !== "REJECTED" && r.status !== "CANCELLED" && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {r.status === "NEW" && (
-                    <Button size="sm" className="gap-1.5" onClick={() => setStatus(r.id, "IN_PROGRESS")} disabled={busyId === r.id}>
-                      {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CircleDashed className="h-3.5 w-3.5" />}
-                      В работу
-                    </Button>
-                  )}
-                  {r.status === "IN_PROGRESS" && (
-                    <Button size="sm" className="gap-1.5" onClick={() => setStatus(r.id, "READY")} disabled={busyId === r.id}>
-                      {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
-                      Готова к выдаче
-                    </Button>
-                  )}
-                  {r.status === "READY" && (
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setStatus(r.id, "DONE")} disabled={busyId === r.id}>
-                      {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
-                      Выдана
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="gap-1.5 text-destructive hover:text-destructive"
-                    onClick={() => {
-                      setRejectFor(r);
-                      setRejectReason("");
-                    }}
-                  >
-                    <ThumbsDown className="h-3.5 w-3.5" />
-                    Отклонить
-                  </Button>
-                </div>
-              )}
+              {(() => {
+                // какие действия доступны — решает общая политика (та же, что и на сервере)
+                const allowed = allowedTransitions("STAFF", r.status);
+                if (allowed.length === 0) return null;
+                return (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {allowed.includes("IN_PROGRESS") && (
+                      <Button size="sm" className="gap-1.5" onClick={() => setStatus(r, "IN_PROGRESS")} disabled={busyId === r.id}>
+                        {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CircleDashed className="h-3.5 w-3.5" />}
+                        В работу
+                      </Button>
+                    )}
+                    {allowed.includes("READY") && (
+                      <Button size="sm" className="gap-1.5" onClick={() => setStatus(r, "READY")} disabled={busyId === r.id}>
+                        {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
+                        Готова к выдаче
+                      </Button>
+                    )}
+                    {allowed.includes("DONE") && (
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setStatus(r, "DONE")} disabled={busyId === r.id}>
+                        {busyId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
+                        Выдана
+                      </Button>
+                    )}
+                    {allowed.includes("REJECTED") && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5 text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setRejectFor(r);
+                          setRejectReason("");
+                        }}
+                      >
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                        Отклонить
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
@@ -215,7 +227,7 @@ export function StaffRequests() {
                 <Button variant="outline" onClick={() => setRejectFor(null)}>
                   Назад
                 </Button>
-                <Button variant="destructive" onClick={() => setStatus(rejectFor.id, "REJECTED", rejectReason)} disabled={rejectReason.trim().length < 3}>
+                <Button variant="destructive" onClick={() => setStatus(rejectFor, "REJECTED", rejectReason)} disabled={rejectReason.trim().length < 3}>
                   Отклонить
                 </Button>
               </DialogFooter>

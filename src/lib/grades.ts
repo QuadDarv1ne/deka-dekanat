@@ -102,12 +102,16 @@ export async function groupRank(userId: string, groupName: string): Promise<{ ra
     where: { userId: { in: ids }, maxScore: { gte: 10 }, score: { not: null } },
     select: { userId: true, score: true },
   })
-  const totals = new Map<string, number>()
+  // Студенты без выставленных баллов тоже входят в рейтинг группы (с 0 баллов),
+  // иначе место считалось бы только среди тех, у кого уже есть оценки.
+  const totals = new Map<string, number>(ids.map((id) => [id, 0]))
   for (const g of grades) {
     totals.set(g.userId, (totals.get(g.userId) ?? 0) + (g.score ?? 0))
   }
-  const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1])
-  const idx = sorted.findIndex(([uid]) => uid === userId)
-  if (idx === -1) return null
-  return { rank: idx + 1, total: sorted.length, points: sorted[idx][1] }
+  const points = totals.get(userId)
+  if (points === undefined) return null
+  const sorted = [...totals.values()].sort((a, b) => b - a)
+  // Одинаковый балл — одинаковое место (олимпийская система: 1, 2, 2, 4).
+  const rank = 1 + sorted.filter((p) => p > points).length
+  return { rank, total: sorted.length, points }
 }

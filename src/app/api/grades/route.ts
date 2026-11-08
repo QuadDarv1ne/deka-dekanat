@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStudent } from "@/lib/api-helpers";
 import { summarizeGrades, gpaOf, groupRank } from "@/lib/grades";
-import { mskNow, humanDate, minutesToHHMM } from "@/lib/time";
+import { mskNow, humanDate, minutesToHHMM, semesterFor } from "@/lib/time";
 
 /** Успеваемость текущего семестра студента: только свои записи. */
 export async function GET() {
@@ -17,9 +17,8 @@ export async function GET() {
   if (!user?.student) return NextResponse.json({ error: "Профиль студента не найден" }, { status: 404 });
 
   const { date: todayIso } = mskNow();
-  const year = Number(todayIso.slice(0, 4));
-  const semesterStartIso = Number(todayIso.slice(5, 7)) >= 8 ? `${year}-09-01` : `${year - 1}-09-01`;
-  const semesterStart = new Date(`${semesterStartIso}T00:00:00.000Z`);
+  const semester = semesterFor(todayIso);
+  const semesterStart = new Date(`${semester.startIso}T00:00:00.000Z`);
 
   const [grades, exams, rank] = await Promise.all([
     db.grade.findMany({
@@ -49,7 +48,9 @@ export async function GET() {
   return NextResponse.json({
     summary,
     rank,
-    semesterStartIso,
+    semesterStartIso: semester.startIso,
+    semesterLabel: semester.label,
+    sessionLabel: semester.sessionLabel,
     subjects: subjects.map((s) => ({
       ...s,
       marks: s.marks.map((m) => ({ ...m, date: m.date.toISOString() })),

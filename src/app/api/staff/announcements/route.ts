@@ -55,6 +55,9 @@ export async function POST(req: NextRequest) {
 
   if (title.length < 5) return NextResponse.json({ error: "Заголовок: минимум 5 символов" }, { status: 400 });
   if (text.length < 10) return NextResponse.json({ error: "Текст объявления: минимум 10 символов" }, { status: 400 });
+  if (audience.startsWith("GROUP:") && audience.slice(6).length === 0) {
+    return NextResponse.json({ error: "Не указана группа-адресат" }, { status: 400 });
+  }
   if (deadline && Number.isNaN(deadline.getTime())) {
     return NextResponse.json({ error: "Некорректная дата дедлайна" }, { status: 400 });
   }

@@ -1,6 +1,12 @@
 /**
  * Наполнение БД вымышленными данными для прототипа "Дека — цифровой деканат".
- * Запуск: bun scripts/seed.ts
+ * Запуск: tsx scripts/seed.ts [--force]
+ *
+ * Безопасность данных: наполнение НЕ перезаписывает непустую базу.
+ *  — если в базе уже есть пользователи, скрипт просто сообщает об этом и выходит,
+ *    ничего не удаляя (защита от случайной потери данных при старте/деплое);
+ *  — для осознанной перезаписи демо-данными нужен явный флаг: `--force`
+ *    или переменная окружения DEKA_SEED_FORCE=1.
  *
  * ВАЖНО: все ФИО, группы, аудитории, оценки и номера — вымышленные.
  * Даты генерируются относительно "сегодня" (Europe/Moscow, UTC+3 без перехода на летнее время),
@@ -10,6 +16,8 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
+
+const FORCE = process.argv.includes('--force') || process.env.DEKA_SEED_FORCE === '1'
 
 // ── Время и даты (Москва = UTC+3, без DST) ─────────────────────────────
 const MSK_OFFSET = 3 * 3600 * 1000
@@ -25,7 +33,20 @@ const dateAt = (y: number, m: number, day: number) => new Date(Date.UTC(y, m, da
 async function main() {
   console.log('Наполняем базу вымышленными данными…')
 
+  // ── Защита от перезаписи существующих данных ────────────────────────
+  // Демо-сид — разрушительная операция (удаляет все записи). Поэтому
+  // без явного --force / DEKA_SEED_FORCE=1 непустую базу не трогаем.
+  const existingUsers = await prisma.user.count()
+  if (existingUsers > 0 && !FORCE) {
+    console.log(
+      `В базе уже ${existingUsers} пользовател${existingUsers === 1 ? 'ь' : 'ей'} — данные не тронуты.\n` +
+        'Чтобы перезаписать базу демо-данными, запустите: tsx scripts/seed.ts --force'
+    )
+    return
+  }
+
   // очистка (порядок важен из-за связей)
+  await prisma.auditLog.deleteMany()
   await prisma.assistantMessage.deleteMany()
   await prisma.notification.deleteMany()
   await prisma.requestEvent.deleteMany()

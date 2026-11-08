@@ -15,6 +15,10 @@ export const metadata: Metadata = {
   description: "Скачайте полный рабочий проект \"Дека — цифровой деканат будущего\": исходный код, Docker, инструкция запуска.",
 };
 
+// архивы могут появиться в public/ уже после сборки (например, из релиза),
+// поэтому проверяем их наличие на каждый запрос
+export const dynamic = "force-dynamic";
+
 // ── Версия и параметры архивов (на момент сборки) ────────────────────────────
 function projectVersion(): string {
   try {
@@ -37,9 +41,6 @@ function archiveSize(name: string): number | null {
   }
 }
 
-const zipSize = archiveSize(ZIP_NAME);
-const tgzSize = archiveSize(TGZ_NAME);
-
 function mb(bytes: number | null): string {
   if (bytes == null) return "";
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} МБ`;
@@ -61,6 +62,11 @@ const ACCOUNTS: Array<[string, string]> = [
 ];
 
 export default function DownloadPage() {
+  // читаем размеры на каждый запрос: архивы могут быть добавлены в public/ позже
+  const zipSize = archiveSize(ZIP_NAME);
+  const tgzSize = archiveSize(TGZ_NAME);
+  const hasArchives = zipSize != null || tgzSize != null;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Шапка */}
@@ -80,25 +86,47 @@ export default function DownloadPage() {
       <main className="mx-auto -mt-8 max-w-2xl px-4 pb-12">
         {/* Скачивание */}
         <section className="mb-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-teal-900/10 sm:p-6">
-          <a
-            href={`/${ZIP_NAME}`}
-            download
-            className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-teal-700 px-6 py-4 text-lg font-semibold text-white transition hover:bg-teal-800"
-          >
-            <Download className="h-5 w-5" />
-            Скачать проект — {ZIP_NAME}
-          </a>
-          <a
-            href={`/${TGZ_NAME}`}
-            download
-            className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-xl border-2 border-teal-700 bg-white px-6 py-3 text-sm font-semibold text-teal-800 transition hover:bg-teal-50"
-          >
-            <FileArchive className="h-4 w-4" />
-            То же самое в tar.gz{tgzSize ? ` · ${mb(tgzSize)}` : ""}
-          </a>
+          {hasArchives ? (
+            <>
+              {zipSize != null && (
+                <a
+                  href={`/${ZIP_NAME}`}
+                  download
+                  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-teal-700 px-6 py-4 text-lg font-semibold text-white transition hover:bg-teal-800"
+                >
+                  <Download className="h-5 w-5" />
+                  Скачать проект — {ZIP_NAME}
+                </a>
+              )}
+              {tgzSize != null && (
+                <a
+                  href={`/${TGZ_NAME}`}
+                  download
+                  className="mt-2.5 flex w-full items-center justify-center gap-2.5 rounded-xl border-2 border-teal-700 bg-white px-6 py-3 text-sm font-semibold text-teal-800 transition hover:bg-teal-50"
+                >
+                  <FileArchive className="h-4 w-4" />
+                  То же самое в tar.gz · {mb(tgzSize)}
+                </a>
+              )}
+            </>
+          ) : (
+            <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-3.5 py-3 text-xs leading-relaxed text-amber-900">
+              <p className="font-semibold">Архив исходников не приложен к этой сборке</p>
+              <p className="mt-1">
+                ZIP и tar.gz собираются автоматически при публикации GitHub-релиза (тег <code>v*</code>) и
+                прикладываются к странице релиза. Если вы читаете это из репозитория — клонируйте его или
+                скачайте архив на странице Releases.
+              </p>
+            </div>
+          )}
           <div className="mt-3.5 flex flex-wrap gap-2">
-            <span className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-800">ZIP{zipSize ? ` · ${mb(zipSize)}` : ""}</span>
-            <span className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-800">лицензия MIT</span>
+            {zipSize != null && (
+              <span className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-800">ZIP · {mb(zipSize)}</span>
+            )}
+            {tgzSize != null && (
+              <span className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-800">tar.gz · {mb(tgzSize)}</span>
+            )}
+            <span className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-800">лицензия CC BY-SA 4.0</span>
             <span className="rounded-full bg-teal-50 px-3 py-1 text-xs text-teal-800">работает без зарубежных сервисов</span>
           </div>
           <p className="mt-3.5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-600">
@@ -191,7 +219,7 @@ export default function DownloadPage() {
           </Link>
           <span className="flex items-center gap-1.5 text-xs text-slate-500">
             <Github className="h-3.5 w-3.5" />
-            Децентрализованный стек: Next.js + SQLite на вашей машине · лицензия MIT
+            Децентрализованный стек: Next.js + SQLite на вашей машине · лицензия CC BY-SA 4.0
           </span>
         </div>
       </main>

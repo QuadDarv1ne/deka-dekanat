@@ -21,7 +21,7 @@ import { PrismaClient } from "@prisma/client";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import { backupCounts, restoreBackupInto, validateBackupData, type BackupRow } from "../src/lib/backup-core";
+import { backupCounts, restoreBackupInto, validateBackupData, BACKUP_VERSION, type BackupRow } from "../src/lib/backup-core";
 
 const args = process.argv.slice(2);
 const autoYes = args.includes("--yes");
@@ -93,7 +93,7 @@ async function main() {
   if (body.format !== "deka-backup") {
     die("это не резервная копия \"Дека\" (ожидался формат deka-backup)", "Личные данные студента (deka-personal-data) сюда не подходят.");
   }
-  if (typeof body.version === "number" && body.version > 1) {
+  if (typeof body.version === "number" && body.version > BACKUP_VERSION) {
     die("копия сделана более новой версией \"Дека\" — обновите приложение");
   }
   const d = body.data;
