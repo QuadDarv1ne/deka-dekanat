@@ -265,15 +265,11 @@ export function ProfileSection({
             история статусов сохранятся.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => (window.location.href = "/api/backup")}
-              title="Скачает всю базу одним JSON-файлом"
-            >
-              <DatabaseBackup className="h-4 w-4" />
-              Полный бэкап (JSON)
+            <Button variant="outline" size="sm" className="gap-1.5" asChild>
+              <a href="/api/backup" title="Скачает всю базу одним JSON-файлом">
+                <DatabaseBackup className="h-4 w-4" />
+                Полный бэкап (JSON)
+              </a>
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => restoreInputRef.current?.click()} disabled={restoring}>
               <Upload className="h-4 w-4" />
@@ -316,15 +312,11 @@ export function ProfileSection({
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {!isStaff && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => (window.location.href = "/api/export")}
-              title="Скачает все ваши данные одним файлом"
-            >
-              <Download className="h-4 w-4" />
-              Мои данные (JSON)
+            <Button variant="outline" size="sm" className="gap-1.5" asChild>
+              <a href="/api/export" title="Скачает все ваши данные одним файлом">
+                <Download className="h-4 w-4" />
+                Мои данные (JSON)
+              </a>
             </Button>
           )}
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>

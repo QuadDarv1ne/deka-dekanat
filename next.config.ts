@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   env: { DATABASE_URL: resolvedDbUrl },
   /* config options here */
+  allowedDevOrigins: ["127.0.0.1"],
   typescript: {
     ignoreBuildErrors: true,
   },

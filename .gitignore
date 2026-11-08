@@ -60,6 +60,9 @@ server.log
 db/*.db
 db/auth-secret.txt
 
+# cookie-jar с живыми сессиями (curl --cookie-jar) — не коммитим
+cookies*.txt
+
 # служебные каталоги среды разработки — в репозиторий не входят
 /.zscripts/
 /Caddyfile
