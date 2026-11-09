@@ -20,15 +20,16 @@ export function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function submit(e?: React.FormEvent) {
+  async function submit(e?: React.FormEvent, creds?: { login: string; password: string }) {
     e?.preventDefault();
+    const cred = creds ?? { login, password };
     setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ login, password }),
+        body: JSON.stringify(cred),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -46,10 +47,11 @@ export function LoginScreen() {
     }
   }
 
+  // Кнопка демо-аккаунта: подставляет данные и сразу выполняет вход.
   function fill(acc: string) {
     setLogin(acc);
     setPassword(DEMO_PASSWORD);
-    setError(null);
+    void submit(undefined, { login: acc, password: DEMO_PASSWORD });
   }
 
   return (
@@ -146,15 +148,16 @@ export function LoginScreen() {
               Тестовые аккаунты (для жюри)
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Пароль у всех: <span className="font-mono font-semibold">demo1234</span>. Нажмите на аккаунт, чтобы подставить.
+              Пароль у всех: <span className="font-mono font-semibold">demo1234</span>. Нажмите на аккаунт — вход выполнится автоматически.
             </p>
             <div className="mt-3 space-y-2">
               {DEMO_ACCOUNTS.map((a) => (
                 <button
                   key={a.login}
                   type="button"
+                  disabled={loading}
                   onClick={() => fill(a.login)}
-                  className="flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  className="flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:opacity-60"
                 >
                   <span>
                     <span className="block text-[13px] font-medium">{a.label}</span>
