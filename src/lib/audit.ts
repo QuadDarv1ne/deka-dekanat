@@ -16,6 +16,11 @@ export const AUDIT = {
   requestCreated: "request.created",
   requestStatusChanged: "request.status_changed",
   requestCancelled: "request.cancelled",
+  academicImportComplete: "academic_import.complete",
+  studentCardVerify: "student_card.verify",
+  studentCardIssue: "student_card.issue",
+  scheduleChanged: "schedule.change",
+  announcementPublished: "announcement.published",
 } as const;
 
 /**

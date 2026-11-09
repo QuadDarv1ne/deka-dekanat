@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/api-helpers";
+import { auditEntry, AUDIT } from "@/lib/audit";
 import { getDaySlots } from "@/lib/schedule";
 import { mskNow, humanDate, addDaysIso, minutesToHHMM } from "@/lib/time";
 
@@ -159,6 +160,15 @@ export async function POST(req: NextRequest) {
       })),
     });
   }
+
+  await db.auditLog.create({
+    data: auditEntry(
+      { id: session.uid, name: session.name, role: session.role },
+      AUDIT.scheduleChanged,
+      created.id,
+      { groupName, date, kind, subject, newDate, newStartMin, newRoom }
+    ),
+  });
 
   return NextResponse.json({ ok: true, change: created, notified: students.length });
 }

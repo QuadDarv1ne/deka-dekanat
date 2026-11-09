@@ -42,6 +42,10 @@ model StudentProfile {
   status       String  @default("Учится")
   entryYear    Int
   curatorName  String?
+  // Электронный студенческий: случайный код для QR-ссылки проверки.
+  // null — карточка ещё не выпущена; токен создаётся при первом открытии профиля.
+  cardToken    String?   @unique
+  cardIssuedAt DateTime?
 }
 
 // ───────────────────────── Расписание ─────────────────────────
