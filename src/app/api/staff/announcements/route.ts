@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/api-helpers";
+import { auditEntry, AUDIT } from "@/lib/audit";
 import { mskMoment } from "@/lib/time";
 
 /**
@@ -87,6 +88,15 @@ export async function POST(req: NextRequest) {
       })),
     });
   }
+
+  await db.auditLog.create({
+    data: auditEntry(
+      { id: session.uid, name: session.name, role: session.role },
+      AUDIT.announcementPublished,
+      created.id,
+      { title, audience, pinned }
+    ),
+  });
 
   return NextResponse.json({ ok: true, announcement: created, notified: recipientIds.length });
 }

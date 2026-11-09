@@ -27,6 +27,7 @@ import type { CabinetUser } from "@/components/cabinet/cabinet-app";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { cardVerifyUrl } from "@/lib/student-card";
 import { formatDateSafe, mskTodayIso, semesterFor } from "@/lib/time";
 
 type GradesLite = {
@@ -118,9 +119,13 @@ export function ProfileSection({
 
   const isStaff = user.role === "STAFF";
 
+  // QR студенческого ведёт на страницу проверки: сотрудник увидит карточку
+  // только после входа. Сам код не содержит ФИО и номера зачётки.
   const qrPayload = isStaff
     ? `DEKA-STAFF|${user.login}|${user.name}`
-    : `DEKA-STUDENT|${user.student?.recordBook ?? user.login}|${user.name}|${user.student?.groupName ?? ""}`;
+    : user.cardToken
+      ? cardVerifyUrl(user.cardToken)
+      : `DEKA-STUDENT|${user.student?.recordBook ?? user.login}|${user.name}|${user.student?.groupName ?? ""}`;
 
   return (
     <div className="animate-fade-up space-y-5">
@@ -393,6 +398,11 @@ export function ProfileSection({
                 ? "Код для входа в учебные корпуса и доступа к рабочим системам."
                 : `${user.student?.faculty ?? ""} · ${user.student?.groupName ?? ""} · ${user.student?.recordBook ?? ""}`}
             </p>
+            {!isStaff && user.cardToken && (
+              <p className="text-center text-[11px] leading-snug text-muted-foreground/80">
+                Сотрудник отсканирует QR и увидит карточку после входа в систему.
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>

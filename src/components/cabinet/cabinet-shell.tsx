@@ -7,11 +7,14 @@ import {
   FileText,
   GraduationCap,
   Home,
+  IdCard,
   LogOut,
   Megaphone,
   Moon,
+  ScrollText,
   Sparkles,
   Sun,
+  Upload,
   Users2,
   User,
   WifiOff,
@@ -31,7 +34,15 @@ export type CabinetUserInfo = {
 };
 
 export type StudentSection = "home" | "schedule" | "grades" | "requests" | "profile";
-export type StaffSection = "requests" | "announcements" | "schedule" | "students" | "profile";
+export type StaffSection =
+  | "requests"
+  | "schedule"
+  | "students"
+  | "card"
+  | "import"
+  | "audit"
+  | "announcements"
+  | "profile";
 
 const AVATAR_BG: Record<string, string> = {
   teal: "bg-teal-600",
@@ -51,9 +62,12 @@ const STUDENT_NAV: { key: StudentSection; label: string; icon: LucideIcon }[] = 
 
 const STAFF_NAV: { key: StaffSection; label: string; icon: LucideIcon }[] = [
   { key: "requests", label: "Заявки", icon: FileText },
-  { key: "announcements", label: "Объявления", icon: Megaphone },
   { key: "schedule", label: "Переносы", icon: CalendarDays },
   { key: "students", label: "Студенты", icon: Users2 },
+  { key: "card", label: "Проверка", icon: IdCard },
+  { key: "import", label: "Импорт", icon: Upload },
+  { key: "audit", label: "Журнал", icon: ScrollText },
+  { key: "announcements", label: "Объявления", icon: Megaphone },
   { key: "profile", label: "Профиль", icon: User },
 ];
 
@@ -260,9 +274,9 @@ export function CabinetShell({ user, section, onNavigate, unread, onOpenNotifica
         className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur-md lg:hidden"
         aria-label="Нижняя навигация"
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 pt-1.5 pb-safe">
+        <div className="thin-scrollbar mx-auto flex max-w-lg items-stretch gap-0.5 overflow-x-auto px-2 pt-1.5 pb-safe">
           {nav.map((item) => (
-            <div key={item.key} className="relative flex-1">
+            <div key={item.key} className="relative min-w-[62px] flex-1">
               {navItem(item, true)}
             </div>
           ))}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
 import { setSessionCookie } from '@/lib/auth'
+import { ensureStudentCardToken } from '@/lib/student-card-server'
 
 // Простая защита от перебора: не более 10 НЕУДАЧНЫХ попыток за минуту с одного IP.
 // Успешный вход сбрасывает счётчик, поэтому обычная работа не блокируется.
@@ -63,6 +64,22 @@ export async function POST(req: NextRequest) {
 
   // успешный вход не должен расходовать лимит попыток
   attempts.delete(ip)
+
+  // Электронный студенческий выпускается при входе: QR в профиле готов сразу,
+  // даже если студент открыл кабинет на новом устройстве.
+  if (user.role === 'STUDENT') {
+    const profile = await db.studentProfile.findUnique({
+      where: { userId: user.id },
+      select: { id: true },
+    })
+    if (profile) {
+      try {
+        await ensureStudentCardToken(profile.id)
+      } catch {
+        // выпуск карточки не должен блокировать вход
+      }
+    }
+  }
 
   await setSessionCookie({
     uid: user.id,

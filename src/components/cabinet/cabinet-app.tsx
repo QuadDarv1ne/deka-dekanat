@@ -15,8 +15,12 @@ import { StaffRequests } from "@/components/cabinet/sections/staff-requests";
 import { StaffAnnouncements } from "@/components/cabinet/sections/staff-announcements";
 import { StaffSchedule } from "@/components/cabinet/sections/staff-schedule";
 import { StaffStudents } from "@/components/cabinet/sections/staff-students";
+import { StaffCard } from "@/components/cabinet/sections/staff-card";
+import { StaffImport } from "@/components/cabinet/sections/staff-import";
+import { StaffAudit } from "@/components/cabinet/sections/staff-audit";
 
 export type CabinetUser = CabinetUserInfo & {
+  cardToken: string | null;
   student: {
     faculty: string;
     program: string;
@@ -83,6 +87,9 @@ export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initial
       {isStaff && section === "announcements" && <StaffAnnouncements />}
       {isStaff && section === "schedule" && <StaffSchedule />}
       {isStaff && section === "students" && <StaffStudents />}
+      {isStaff && section === "card" && <StaffCard />}
+      {isStaff && section === "import" && <StaffImport />}
+      {isStaff && section === "audit" && <StaffAudit />}
       {isStaff && section === "profile" && <ProfileSection user={user} onUnreadChange={setUnread} />}
 
       <NotificationsPanel

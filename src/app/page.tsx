@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { ensureStudentCardToken } from "@/lib/student-card-server";
 import { LoginScreen } from "@/components/login-screen";
 import { CabinetApp } from "@/components/cabinet/cabinet-app";
 
@@ -26,6 +27,17 @@ export default async function RootPage() {
     where: { userId: user.id, readAt: null },
   });
 
+  // Электронный студенческий выпускается при первом открытии профиля.
+  // Ошибка выпуска не должна блокировать вход в кабинет.
+  let cardToken: string | null = null;
+  if (user.student) {
+    try {
+      cardToken = await ensureStudentCardToken(user.student.id);
+    } catch {
+      cardToken = user.student.cardToken;
+    }
+  }
+
   return (
     <CabinetApp
       user={{
@@ -34,6 +46,7 @@ export default async function RootPage() {
         name: user.name,
         role: user.role === "STAFF" ? "STAFF" : "STUDENT",
         avatarColor: user.avatarColor,
+        cardToken,
         student: user.student
           ? {
               faculty: user.student.faculty,

@@ -14,6 +14,7 @@
  */
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { randomBytes } from 'node:crypto'
 
 const prisma = new PrismaClient()
 
@@ -118,6 +119,7 @@ async function main() {
           create: {
             faculty: s.faculty, program: s.program, course: s.course, groupName: s.group,
             recordBook: s.recordBook, entryYear: s.entryYear, curatorName: s.curator,
+            cardToken: randomBytes(16).toString('hex'), cardIssuedAt: today,
           },
         },
       },

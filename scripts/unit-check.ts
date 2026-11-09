@@ -14,6 +14,13 @@ import { buildIcs } from "../src/lib/ics";
 import { canTransition, allowedTransitions, isTerminal } from "../src/lib/request-policy";
 import { clockAnswer } from "../src/lib/clock";
 import { docVerifyPath } from "../src/lib/doc-verify";
+import {
+  importRowDisplay,
+  importTemplate,
+  normalizeImportRow,
+  parseAcademicTable,
+} from "../src/lib/academic-import";
+import { normalizeCardToken } from "../src/lib/student-card";
 
 let passed = 0;
 const failures: string[] = [];
@@ -187,6 +194,63 @@ eq(
   `/verify?doc=${encodeURIComponent("СП-2026-0118.DEKA-7Q2K-11AF")}`,
   "ссылка проверки: формат /verify?doc=НОМЕР.КОД"
 );
+
+/* ---------- импорт учебных данных ---------- */
+const gradeTable = [
+  ["Логин", "Дисциплина", "Преподаватель", "Вид", "Название", "Баллы", "МаксБаллов", "Оценка", "Дата", "Комментарий"],
+  ["student1", "Математический анализ", "Демидова Е. П.", "Модуль 2", "Баллы за 2-й модуль", "35", "40", "", "2026-11-09", ""],
+  ["student1", "Базы данных", "Хайдаров Р. Р.", "Лабораторные", "Лабораторная №4", "", "", "5", "09.11.2026", "Зачтено"],
+];
+const gradeParsed = parseAcademicTable("grades", gradeTable);
+eq(gradeParsed.rows.length, 2, "импорт оценок: обе строки разобраны");
+eq(gradeParsed.issues.length, 0, "импорт оценок: ошибок нет");
+eq((gradeParsed.rows[0] as { score: number | null }).score, 35, "импорт оценок: баллы разобраны");
+eq((gradeParsed.rows[1] as { mark: string | null }).mark, "5", "импорт оценок: оценка разобрана");
+eq((gradeParsed.rows[1] as { dateIso: string }).dateIso, "2026-11-09", "импорт оценок: дата ДД.ММ.ГГГГ приведена к ISO");
+eq(importRowDisplay("grades", gradeParsed.rows[0])[0], "student1", "импорт оценок: предпросмотр начинается с логина");
+
+const badGrade = parseAcademicTable("grades", [
+  gradeTable[0],
+  ["student1", "Математический анализ", "Демидова Е. П.", "Модуль", "Контрольная", "50", "40", "", "2026-11-09", ""],
+]);
+eq(badGrade.issues.length, 1, "импорт оценок: баллы больше максимума отклонены");
+ok(badGrade.issues[0].message.includes("больше максимума"), "импорт оценок: понятная ошибка по баллам");
+
+const scheduleTable = [
+  ["Группа", "ДеньНедели", "Начало", "Окончание", "Дисциплина", "Вид", "Аудитория", "Корпус", "Преподаватель"],
+  ["ПИ-231", "Понедельник", "09:00", "10:30", "Математический анализ", "Лекция", "А-312", "Главный корпус", "Демидова Е. П."],
+];
+const scheduleParsed = parseAcademicTable("schedule", scheduleTable);
+eq(scheduleParsed.rows.length, 1, "импорт расписания: строка разобрана");
+eq((scheduleParsed.rows[0] as { weekday: number }).weekday, 1, "импорт расписания: день недели разобран");
+eq((scheduleParsed.rows[0] as { startMin: number }).startMin, 540, "импорт расписания: время начала разобрано");
+eq((scheduleParsed.rows[0] as { endMin: number }).endMin, 630, "импорт расписания: время окончания разобрано");
+
+let missingHeader = false;
+try {
+  parseAcademicTable("grades", [["Логин"], ["student1"]]);
+} catch {
+  missingHeader = true;
+}
+ok(missingHeader, "импорт: отсутствие обязательных столбцов отклонено");
+
+const normalized = normalizeImportRow(
+  "grades",
+  { login: "student1", subjectName: "Базы данных", teacherName: "Хайдаров Р. Р.", kind: "Модуль", title: "Модуль 1", score: "20", maxScore: "50", dateIso: "2026-11-09" },
+  2
+);
+eq((normalized as { score: number | null }).score, 20, "импорт: подтверждение принимает строки предпросмотра");
+
+ok(importTemplate("grades").startsWith("\uFEFF"), "шаблон CSV: BOM для Excel");
+ok(importTemplate("schedule").includes("ДеньНедели"), "шаблон CSV: содержит заголовки расписания");
+
+/* ---------- проверка студенческого ---------- */
+eq(
+  normalizeCardToken("https://deka.example/verify/card/0123456789ABCDEF0123456789ABCDEF"),
+  "0123456789abcdef0123456789abcdef",
+  "студенческий: токен извлекается из ссылки и приводится к нижнему регистру"
+);
+eq(normalizeCardToken("мусор"), null, "студенческий: мусорный ввод отклонён");
 
 /* ---------- итог ---------- */
 if (failures.length) {
