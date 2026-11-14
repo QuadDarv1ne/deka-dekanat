@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileText, Search, User2 } from "lucide-react";
+import { BadgeCheck, FileText, Search, ShieldCheck, User2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +23,10 @@ type StaffStudent = {
   status: string;
   marksCount: number;
   activeRequests: number;
+  studentDocUploadedAt: string | null;
+  studentDocUrl: string | null;
+  admissionConsentUploadedAt: string | null;
+  admissionConsentUrl: string | null;
 };
 
 export function StaffStudents() {
@@ -88,6 +92,20 @@ export function StaffStudents() {
                 </span>
                 <span>зачётка {s.recordBook}</span>
                 <span>оценок: {s.marksCount}</span>
+                {s.studentDocUploadedAt ? (
+                  <a href={s.studentDocUrl ?? "#"} target="_blank" rel="noopener noreferrer" className="flex items-center gap-0.5 text-teal-600 hover:underline dark:text-teal-400">
+                    <ShieldCheck className="h-3 w-3" /> Билет
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground/60">нет билета</span>
+                )}
+                {s.admissionConsentUploadedAt ? (
+                  <a href={s.admissionConsentUrl ?? "#"} target="_blank" rel="noopener noreferrer" className="flex items-center gap-0.5 text-teal-600 hover:underline dark:text-teal-400">
+                    <BadgeCheck className="h-3 w-3" /> Согласие
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground/60">нет согласия</span>
+                )}
                 <span className="ml-auto font-medium text-lime-700 dark:text-lime-400">{s.status}</span>
               </div>
             </div>

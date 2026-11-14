@@ -41,11 +41,16 @@ model StudentProfile {
   studyForm    String  @default("Очная")
   status       String  @default("Учится")
   entryYear    Int
-  curatorName  String?
+  curatorName          String?
   // Электронный студенческий: случайный код для QR-ссылки проверки.
   // null — карточка ещё не выпущена; токен создаётся при первом открытии профиля.
-  cardToken    String?   @unique
-  cardIssuedAt DateTime?
+  cardToken            String?   @unique
+  cardIssuedAt         DateTime?
+  // Загруженные документы: студенческий билет и согласие на зачисление
+  studentDocUrl        String?   @default("") // URL файла студенческого билета
+  studentDocUploadedAt DateTime?
+  admissionConsentUrl  String?   @default("") // URL файла согласия на зачисление
+  admissionConsentUploadedAt DateTime?
 }
 
 // ───────────────────────── Расписание ─────────────────────────

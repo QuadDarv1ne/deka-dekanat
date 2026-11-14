@@ -31,6 +31,10 @@ export type CabinetUser = CabinetUserInfo & {
     status: string;
     entryYear: number;
     curatorName: string | null;
+    studentDocUrl: string | null;
+    studentDocUploadedAt: string | null;
+    admissionConsentUrl: string | null;
+    admissionConsentUploadedAt: string | null;
   } | null;
 };
 
@@ -73,8 +77,7 @@ export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initial
           onOpenAssistant={() => setAssistantOpen(true)}
           onOpenNotifications={() => setNotifOpen(true)}
         />
-      )}
-      {!isStaff && user.student && section === "schedule" && <StudentSchedule />}
+      )}      {!isStaff && user.student && section === "schedule" && <StudentSchedule />}
       {!isStaff && user.student && section === "grades" && <StudentGrades />}
       {!isStaff && user.student && section === "requests" && (
         <StudentRequests onOpenNotifications={() => setNotifOpen(true)} onUnreadChange={setUnread} />

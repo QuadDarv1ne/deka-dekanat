@@ -58,6 +58,10 @@ export default async function RootPage() {
               status: user.student.status,
               entryYear: user.student.entryYear,
               curatorName: user.student.curatorName,
+              studentDocUrl: user.student.studentDocUrl || null,
+              studentDocUploadedAt: user.student.studentDocUploadedAt?.toISOString() ?? null,
+              admissionConsentUrl: user.student.admissionConsentUrl || null,
+              admissionConsentUploadedAt: user.student.admissionConsentUploadedAt?.toISOString() ?? null,
             }
           : null,
       }}

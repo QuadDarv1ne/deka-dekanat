@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ChevronRight, ClipboardList, FileText, QrCode, Sparkles } from "lucide-react";
+import { CalendarDays, ChevronRight, ClipboardList, FileText, QrCode, Sparkles, TriangleAlert, Upload } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,7 +53,7 @@ export function StudentHome({
   onOpenAssistant,
   onOpenNotifications,
 }: {
-  student: { groupName: string };
+  student: { groupName: string; studentDocUploadedAt: string | null; admissionConsentUploadedAt: string | null };
   userName: string;
   onNavigate: (section: string) => void;
   onOpenAssistant: () => void;
@@ -61,6 +61,7 @@ export function StudentHome({
 }) {
   const { data, error, loading } = useApi<HomeData>("/api/home");
   const firstName = userName.split(" ")[0];
+  const hasDocs = !!(student.studentDocUploadedAt && student.admissionConsentUploadedAt);
 
   return (
     <div className="animate-fade-up space-y-5">
@@ -75,6 +76,28 @@ export function StudentHome({
       </div>
 
       {error && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+
+      {/* Баннер: загрузите документы */}
+      {!hasDocs && (
+        <button
+          type="button"
+          onClick={() => onNavigate("profile")}
+          className="flex w-full items-start gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/8 p-3.5 text-left transition-colors hover:bg-amber-500/15"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-400">
+            <TriangleAlert className="h-4.5 w-4.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-semibold text-amber-800 dark:text-amber-300">Загрузите документы</p>
+            <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+              {!student.studentDocUploadedAt && "Не загружен студенческий билет. "}
+              {!student.admissionConsentUploadedAt && "Не загружено согласие на зачисление. "}
+              Перейдите в профиль для загрузки.
+            </p>
+          </div>
+          <Upload className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      )}
 
       {/* Ближайшая пара */}
       {loading ? (

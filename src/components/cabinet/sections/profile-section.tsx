@@ -6,6 +6,8 @@ import {
   CalendarRange,
   DatabaseBackup,
   Download,
+  Eye,
+  FileText,
   GraduationCap,
   IdCard,
   Info,
@@ -14,6 +16,7 @@ import {
   Phone,
   QrCode,
   ShieldCheck,
+  Trash2,
   TriangleAlert,
   Upload,
   User2,
@@ -258,6 +261,9 @@ export function ProfileSection({
         </section>
       )}
 
+      {/* Загрузка документов (только студент) */}
+      {!isStaff && <StudentDocumentsSection user={user} />}
+
       {/* Суверенитет данных деканата (только сотрудник) */}
       {isStaff && (
         <section aria-labelledby="sovereignty-heading" className="rounded-2xl border bg-card p-4">
@@ -407,5 +413,188 @@ export function ProfileSection({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ─── Загрузка документов студента ────────────────────────────────────────────
+
+function StudentDocumentsSection({ user }: { user: CabinetUser }) {
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [msg, setMsg] = useState<{ field: string; ok: boolean; text: string } | null>(null);
+
+  const docs = [
+    {
+      field: "studentDoc" as const,
+      title: "Студенческий билет",
+      description: "Скан или фото студенческого билета (PDF, JPG, PNG)",
+      url: user.student?.studentDocUrl ?? null,
+      uploadedAt: user.student?.studentDocUploadedAt ?? null,
+    },
+    {
+      field: "admissionConsent" as const,
+      title: "Согласие на зачисление",
+      description: "Сканированная копия согласия на зачисление (PDF, JPG, PNG)",
+      url: user.student?.admissionConsentUrl ?? null,
+      uploadedAt: user.student?.admissionConsentUploadedAt ?? null,
+    },
+  ] as const;
+
+  function openDocument(url: string | null) {
+    if (!url) return;
+    window.open(url, "_blank", "noopener");
+  }
+
+  function downloadDocument(url: string | null) {
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = url.split("/").pop() || "document";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  async function handleUpload(field: string, file: File) {
+    setUploading((prev) => ({ ...prev, [field]: true }));
+    setMsg(null);
+
+    const formData = new FormData();
+    formData.append("field", field);
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const out = (await res.json()) as { ok?: boolean; error?: string; uploadedAt?: string };
+      if (!res.ok || !out.ok) throw new Error(out.error || "Не удалось загрузить файл");
+
+      // Обновляем локальный стейт — перезагружаем страницу для актуальных данных
+      setMsg({ field, ok: true, text: "Файл загружен" });
+      setTimeout(() => window.location.reload(), 800);
+    } catch (err) {
+      setMsg({ field, ok: false, text: err instanceof Error ? err.message : "Ошибка загрузки" });
+    } finally {
+      setUploading((prev) => ({ ...prev, [field]: false }));
+    }
+  }
+
+  async function handleDelete(field: string) {
+    setUploading((prev) => ({ ...prev, [field]: true }));
+    setMsg(null);
+
+    try {
+      const res = await fetch(`/api/profile/upload?field=${field}`, { method: "DELETE" });
+      const out = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !out.ok) throw new Error(out.error || "Не удалось удалить файл");
+
+      setMsg({ field, ok: true, text: "Файл удалён" });
+      setTimeout(() => window.location.reload(), 800);
+    } catch (err) {
+      setMsg({ field, ok: false, text: err instanceof Error ? err.message : "Ошибка удаления" });
+    } finally {
+      setUploading((prev) => ({ ...prev, [field]: false }));
+    }
+  }
+
+  return (
+    <section aria-labelledby="documents-heading" className="rounded-2xl border bg-card p-4">
+      <h2 id="documents-heading" className="flex items-center gap-1.5 text-[15px] font-bold tracking-tight">
+        <FileText className="h-4.5 w-4.5 text-teal-600" />
+        Документы
+      </h2>
+      <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
+        Загрузите сканы обязательных документов для оформления в деканате.
+      </p>
+
+      <div className="mt-3 space-y-3">
+        {docs.map((doc) => (
+          <div
+            key={doc.field}
+            className="rounded-xl border border-dashed p-3 transition-colors hover:border-teal-300 dark:hover:border-teal-700"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold">{doc.title}</p>
+                <p className="mt-0.5 text-[11.5px] text-muted-foreground">{doc.description}</p>
+                {doc.uploadedAt && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-teal-600 dark:text-teal-400">
+                    <BadgeCheck className="h-3 w-3" />
+                    Загружено {formatDateSafe(doc.uploadedAt)}
+                  </p>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {doc.url && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => openDocument(doc.url)}
+                      title="Открыть"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => downloadDocument(doc.url)}
+                      title="Скачать"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                  </>
+                )}
+                <label
+                  className={cn(
+                    "inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[12px] font-medium transition-colors",
+                    "hover:bg-muted/60",
+                    uploading[doc.field] && "pointer-events-none opacity-50"
+                  )}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {doc.uploadedAt ? "Заменить" : "Загрузить"}
+                  <input
+                    type="file"
+                    className="sr-only"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    disabled={uploading[doc.field]}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) handleUpload(doc.field, file);
+                    }}
+                  />
+                </label>
+                {doc.uploadedAt && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    disabled={uploading[doc.field]}
+                    onClick={() => handleDelete(doc.field)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            {msg?.field === doc.field && (
+              <p
+                className={cn(
+                  "mt-2 text-[11.5px]",
+                  msg.ok ? "text-teal-600 dark:text-teal-400" : "text-destructive"
+                )}
+              >
+                {msg.text}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

@@ -43,6 +43,10 @@ export async function GET() {
       status: p.status,
       marksCount: gradeMap.get(p.userId) ?? 0,
       activeRequests: reqMap.get(p.userId) ?? 0,
+      studentDocUploadedAt: p.studentDocUploadedAt?.toISOString() ?? null,
+      studentDocUrl: p.studentDocUrl || null,
+      admissionConsentUploadedAt: p.admissionConsentUploadedAt?.toISOString() ?? null,
+      admissionConsentUrl: p.admissionConsentUrl || null,
     })),
   });
 }
