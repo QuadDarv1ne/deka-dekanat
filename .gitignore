@@ -85,3 +85,10 @@ db/snapshots/
 
 # загруженные пользователями файлы
 /public/uploads/
+
+# SvelteKit (apps/portal) — новая архитектура
+var/
+**/.svelte-kit/
+**/.output/
+**/.test-build/
+**/.sites-runtime/

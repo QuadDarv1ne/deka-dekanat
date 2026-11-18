@@ -1,0 +1,64 @@
+{
+  "name": "deka",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#application/*": "./src/lib/application/*",
+    "#modules/*": "./src/lib/modules/*",
+    "#shared/*": "./src/lib/shared/*",
+    "#server/*": "./src/lib/server/*"
+  },
+  "engines": {
+    "node": ">=26.13.0 <27"
+  },
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1 --port 5180 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 5181",
+    "start": "node --env-file-if-exists=../../var/config/application.env .output/index.js",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc --noEmit --project src/service-worker/tsconfig.json",
+    "format": "prettier --write src tooling tests *.json *.ts",
+    "db:migrate": "node --env-file-if-exists=../../var/config/application.env tooling/database/migrate.mjs",
+    "db:seed": "node --env-file-if-exists=../../var/config/application.env tooling/database/seed.mjs",
+    "test": "node --env-file=../../var/config/application.env tooling/testing/run-tests.mjs",
+    "prepare": "svelte-kit sync"
+  },
+  "dependencies": {
+    "@lucide/svelte": "1.70.0",
+    "csv-parse": "7.0.3",
+    "pg": "8.23.1",
+    "qrcode": "1.5.4",
+    "read-excel-file": "9.3.14",
+    "svelte": "5.57.3"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "6.0.1",
+    "@sveltejs/kit": "3.1.1",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "@types/qrcode": "1.5.6",
+    "prettier": "3.9.10",
+    "prettier-plugin-svelte": "4.1.1",
+    "svelte-check": "4.7.8",
+    "typescript": "6.0.3",
+    "vite": "8.3.6"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "none",
+    "printWidth": 100,
+    "plugins": [
+      "prettier-plugin-svelte"
+    ],
+    "overrides": [
+      {
+        "files": "*.svelte",
+        "options": {
+          "parser": "svelte"
+        }
+      }
+    ]
+  }
+}

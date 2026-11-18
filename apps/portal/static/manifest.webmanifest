@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "Дека",
+  "short_name": "Дека",
+  "lang": "ru",
+  "start_url": "/overview",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f9",
+  "theme_color": "#554be0",
+  "icons": [
+    { "src": "/brand/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/brand/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

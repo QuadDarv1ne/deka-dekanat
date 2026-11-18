@@ -41,9 +41,11 @@ type GradesLite = {
 export function ProfileSection({
   user,
   onUnreadChange,
+  onDocsChange,
 }: {
   user: CabinetUser;
   onUnreadChange: (n: number) => void;
+  onDocsChange: (docs: DocState) => void;
 }) {
   const { data: grades } = useApi<GradesLite>(user.student ? "/api/grades" : null);
   const [qrOpen, setQrOpen] = useState(false);
@@ -262,7 +264,7 @@ export function ProfileSection({
       )}
 
       {/* Загрузка документов (только студент) */}
-      {!isStaff && <StudentDocumentsSection user={user} />}
+      {!isStaff && <StudentDocumentsSection user={user} onDocsChange={onDocsChange} />}
 
       {/* Суверенитет данных деканата (только сотрудник) */}
       {isStaff && (
@@ -418,26 +420,46 @@ export function ProfileSection({
 
 // ─── Загрузка документов студента ────────────────────────────────────────────
 
-function StudentDocumentsSection({ user }: { user: CabinetUser }) {
+type DocState = {
+  studentDocUrl: string | null;
+  studentDocUploadedAt: string | null;
+  admissionConsentUrl: string | null;
+  admissionConsentUploadedAt: string | null;
+};
+
+function StudentDocumentsSection({
+  user,
+  onDocsChange,
+}: {
+  user: CabinetUser;
+  onDocsChange: (docs: DocState) => void;
+}) {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [msg, setMsg] = useState<{ field: string; ok: boolean; text: string } | null>(null);
 
-  const docs = [
+  const docs: DocState = {
+    studentDocUrl: user.student?.studentDocUrl ?? null,
+    studentDocUploadedAt: user.student?.studentDocUploadedAt ?? null,
+    admissionConsentUrl: user.student?.admissionConsentUrl ?? null,
+    admissionConsentUploadedAt: user.student?.admissionConsentUploadedAt ?? null,
+  };
+
+  const docItems = [
     {
       field: "studentDoc" as const,
       title: "Студенческий билет",
-      description: "Скан или фото студенческого билета (PDF, JPG, PNG)",
-      url: user.student?.studentDocUrl ?? null,
-      uploadedAt: user.student?.studentDocUploadedAt ?? null,
+      description: "Скан или фото студенческого билета (PDF, JPG, PNG, WEBP)",
+      url: docs.studentDocUrl,
+      uploadedAt: docs.studentDocUploadedAt,
     },
     {
       field: "admissionConsent" as const,
       title: "Согласие на зачисление",
-      description: "Сканированная копия согласия на зачисление (PDF, JPG, PNG)",
-      url: user.student?.admissionConsentUrl ?? null,
-      uploadedAt: user.student?.admissionConsentUploadedAt ?? null,
+      description: "Сканированная копия согласия на зачисление (PDF, JPG, PNG, WEBP)",
+      url: docs.admissionConsentUrl,
+      uploadedAt: docs.admissionConsentUploadedAt,
     },
-  ] as const;
+  ];
 
   function openDocument(url: string | null) {
     if (!url) return;
@@ -467,12 +489,13 @@ function StudentDocumentsSection({ user }: { user: CabinetUser }) {
         method: "POST",
         body: formData,
       });
-      const out = (await res.json()) as { ok?: boolean; error?: string; uploadedAt?: string };
+      const out = (await res.json()) as { ok?: boolean; error?: string; docs?: DocState };
       if (!res.ok || !out.ok) throw new Error(out.error || "Не удалось загрузить файл");
-
-      // Обновляем локальный стейт — перезагружаем страницу для актуальных данных
-      setMsg({ field, ok: true, text: "Файл загружен" });
-      setTimeout(() => window.location.reload(), 800);
+      if (out.docs) {
+        setMsg({ field, ok: true, text: "Файл загружен" });
+        setTimeout(() => setMsg(null), 2000);
+        onDocsChange(out.docs);
+      }
     } catch (err) {
       setMsg({ field, ok: false, text: err instanceof Error ? err.message : "Ошибка загрузки" });
     } finally {
@@ -486,17 +509,21 @@ function StudentDocumentsSection({ user }: { user: CabinetUser }) {
 
     try {
       const res = await fetch(`/api/profile/upload?field=${field}`, { method: "DELETE" });
-      const out = (await res.json()) as { ok?: boolean; error?: string };
+      const out = (await res.json()) as { ok?: boolean; error?: string; docs?: DocState };
       if (!res.ok || !out.ok) throw new Error(out.error || "Не удалось удалить файл");
-
-      setMsg({ field, ok: true, text: "Файл удалён" });
-      setTimeout(() => window.location.reload(), 800);
+      if (out.docs) {
+        setMsg({ field, ok: true, text: "Файл удалён" });
+        setTimeout(() => setMsg(null), 2000);
+        onDocsChange(out.docs);
+      }
     } catch (err) {
       setMsg({ field, ok: false, text: err instanceof Error ? err.message : "Ошибка удаления" });
     } finally {
       setUploading((prev) => ({ ...prev, [field]: false }));
     }
   }
+
+  const hasAnyDoc = !!(docs.studentDocUrl || docs.admissionConsentUrl);
 
   return (
     <section aria-labelledby="documents-heading" className="rounded-2xl border bg-card p-4">
@@ -507,9 +534,14 @@ function StudentDocumentsSection({ user }: { user: CabinetUser }) {
       <p className="mt-1 text-[12.5px] leading-snug text-muted-foreground">
         Загрузите сканы обязательных документов для оформления в деканате.
       </p>
+      {!hasAnyDoc && (
+        <p className="mt-2 text-[11.5px] text-muted-foreground/70">
+          Документы понадобятся, когда деканат начнёт их проверку.
+        </p>
+      )}
 
       <div className="mt-3 space-y-3">
-        {docs.map((doc) => (
+        {docItems.map((doc) => (
           <div
             key={doc.field}
             className="rounded-xl border border-dashed p-3 transition-colors hover:border-teal-300 dark:hover:border-teal-700"

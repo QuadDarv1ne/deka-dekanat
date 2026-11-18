@@ -1,0 +1,11 @@
+.git
+var
+**/node_modules
+**/.svelte-kit
+**/.output
+**/.test-build
+**/.sites-runtime
+**/.env*
+**/*.log
+apps/portal/tests
+infrastructure/windows

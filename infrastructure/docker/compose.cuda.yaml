@@ -1,0 +1,12 @@
+services:
+  ai:
+    image: ${LLAMA_CUDA_IMAGE:-ghcr.io/ggml-org/llama.cpp@sha256:ae96e52f8b2106ea82bad786ee2d08bb9b0a8c93403df9c27ae1bf065a118089}
+    environment:
+      LLAMA_ARG_N_GPU_LAYERS: '99'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

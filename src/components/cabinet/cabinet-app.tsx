@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { CabinetShell, type CabinetUserInfo } from "@/components/cabinet/cabinet-shell";
 import { clearApiCache } from "@/components/cabinet/use-api";
@@ -38,12 +38,27 @@ export type CabinetUser = CabinetUserInfo & {
   } | null;
 };
 
-export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initialUnread: number }) {
+export function CabinetApp({ user: initialUser, initialUnread }: { user: CabinetUser; initialUnread: number }) {
+  const [user, setUser] = useState(initialUser);
   const [section, setSection] = useState<string>(user.role === "STAFF" ? "requests" : "home");
   const [unread, setUnread] = useState(initialUnread);
   const [notifOpen, setNotifOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleDocsChange = useCallback(
+    (docs: {
+      studentDocUrl: string | null;
+      studentDocUploadedAt: string | null;
+      admissionConsentUrl: string | null;
+      admissionConsentUploadedAt: string | null;
+    }) => {
+      setUser((prev) =>
+        prev.student ? { ...prev, student: { ...prev.student, ...docs } } : prev
+      );
+    },
+    []
+  );
 
   async function logout() {
     setLoggingOut(true);
@@ -83,7 +98,7 @@ export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initial
         <StudentRequests onOpenNotifications={() => setNotifOpen(true)} onUnreadChange={setUnread} />
       )}
       {!isStaff && user.student && section === "profile" && (
-        <ProfileSection user={user} onUnreadChange={setUnread} />
+        <ProfileSection user={user} onUnreadChange={setUnread} onDocsChange={handleDocsChange} />
       )}
 
       {isStaff && section === "requests" && <StaffRequests />}
@@ -93,7 +108,7 @@ export function CabinetApp({ user, initialUnread }: { user: CabinetUser; initial
       {isStaff && section === "card" && <StaffCard />}
       {isStaff && section === "import" && <StaffImport />}
       {isStaff && section === "audit" && <StaffAudit />}
-      {isStaff && section === "profile" && <ProfileSection user={user} onUnreadChange={setUnread} />}
+      {isStaff && section === "profile" && <ProfileSection user={user} onUnreadChange={setUnread} onDocsChange={handleDocsChange} />}
 
       <NotificationsPanel
         open={notifOpen}

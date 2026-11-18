@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eo pipefail
+psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" --set ON_ERROR_STOP=1 <<'SQL'
+\getenv application_password APP_DB_PASSWORD
+CREATE ROLE deka_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+ALTER ROLE deka_app PASSWORD :'application_password';
+GRANT CONNECT ON DATABASE deka TO deka_app;
+GRANT USAGE ON SCHEMA public TO deka_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO deka_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE,SELECT ON SEQUENCES TO deka_app;
+SQL

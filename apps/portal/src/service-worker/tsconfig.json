@@ -1,0 +1,6 @@
+{
+  "extends": "$app/tsconfig/service-worker",
+  "include": ["index.ts"],
+  "exclude": [],
+  "compilerOptions": { "strict": true, "skipLibCheck": true, "lib": ["ES2023", "WebWorker"] }
+}

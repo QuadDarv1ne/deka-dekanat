@@ -1,3 +1,10 @@
 # Архивы проекта, раздаваемые с сайта (/download), не попадают в git archive
 # и в GitHub ZIP-ball — иначе архив включал бы сам себя (рекурсия и +2 МБ).
 public/deka-dekanat-* export-ignore
+
+# Новая архитектура (SvelteKit)
+* text=auto eol=lf
+# Migration files are compared with the checksums stored in PostgreSQL.
+database/migrations/*.sql text eol=lf
+# The PostgreSQL Docker image runs this script on Linux.
+*.sh text eol=lf
