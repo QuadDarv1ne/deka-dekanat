@@ -21,6 +21,15 @@ import {
   parseAcademicTable,
 } from "../src/lib/academic-import";
 import { normalizeCardToken } from "../src/lib/student-card";
+import {
+  cardVerifyPath,
+} from "../src/lib/student-card";
+import {
+  isNumericMark,
+  summarizeGrades,
+  gpaOf,
+} from "../src/lib/grades";
+import { announcementVisible, greetingFor } from "../src/lib/api-helpers";
 
 let passed = 0;
 const failures: string[] = [];
@@ -251,6 +260,58 @@ eq(
   "студенческий: токен извлекается из ссылки и приводится к нижнему регистру"
 );
 eq(normalizeCardToken("мусор"), null, "студенческий: мусорный ввод отклонён");
+eq(
+  cardVerifyPath("0123456789abcdef0123456789abcdef"),
+  "/verify/card/0123456789abcdef0123456789abcdef",
+  "студенческий: путь проверки формируется корректно"
+);
+
+/* ---------- успеваемость ---------- */
+const gradeEntries = [
+  { id: "g1", subjectName: "Матанализ", teacherName: "Иванов", kind: "Модуль 1", title: "Модуль 1", score: 40, maxScore: 50, mark: null, date: new Date("2026-10-15"), comment: null },
+  { id: "g2", subjectName: "Матанализ", teacherName: "Иванов", kind: "Модуль 2", title: "Модуль 2", score: 30, maxScore: 50, mark: null, date: new Date("2026-11-15"), comment: null },
+  { id: "g3", subjectName: "Матанализ", teacherName: "Иванов", kind: "Коллоквиум", title: "Колл. 1", score: null, maxScore: null, mark: "5", date: new Date("2026-11-01"), comment: null },
+  { id: "g4", subjectName: "Физика", teacherName: "Петров", kind: "Зачёт", title: "Зачёт", score: null, maxScore: null, mark: "Зачтено", date: new Date("2026-12-01"), comment: null },
+  { id: "g5", subjectName: "Физика", teacherName: "Петров", kind: "Модуль 1", title: "Модуль 1", score: 60, maxScore: 100, mark: null, date: new Date("2026-11-20"), comment: null },
+];
+const subjects = summarizeGrades(gradeEntries);
+eq(subjects.length, 2, "grades: две дисциплины");
+eq(subjects[0].subjectName, "Матанализ", "grades: сортировка по проценту (Матанализ 70% > Физика 60%)");
+eq(subjects[0].points, 70, "grades: накопленные баллы Матанализ");
+eq(subjects[0].percent, 70, "grades: процент Матанализ");
+eq(subjects[0].projected, "hor", "grades: прогноз «хорошо» для 70%");
+eq(subjects[1].percent, 60, "grades: процент Физика");
+eq(subjects[1].projected, "udov", "grades: прогноз «удовлетворительно» для 60%");
+eq(subjects[0].marks.length, 1, "grades: одна числовая оценка в Матанализ");
+eq(subjects[0].entries.length, 3, "grades: все записи включены");
+eq(subjects[0].entries[0].id, "g2", "grades: сортировка записей по дате (новые сверху)");
+
+eq(isNumericMark("5"), true, "isNumericMark: «5» — числовая");
+eq(isNumericMark("Зачтено"), false, "isNumericMark: «Зачтено» — не числовая");
+eq(isNumericMark(null), false, "isNumericMark: null — не числовая");
+
+const gpa = gpaOf(subjects);
+eq(gpa, 5, "gpaOf: средний балл из оценок (только «5» = 5.0)");
+eq(gpaOf([]), null, "gpaOf: пустой список — null");
+
+const riskSubjects = summarizeGrades([
+  { id: "r1", subjectName: "Химия", teacherName: "Сидоров", kind: "Модуль", title: "Модуль 1", score: 20, maxScore: 100, mark: "2", date: new Date("2026-11-01"), comment: null },
+]);
+eq(riskSubjects[0].projected, "risk", "grades: 20% → зона риска");
+
+/* ---------- объявления: видимость ---------- */
+eq(announcementVisible({ audience: "ALL" }, null), true, "announcementVisible: ALL виден всем");
+eq(announcementVisible({ audience: "GROUP:ПИ-231" }, { groupName: "ПИ-231", faculty: "ИТ" }), true, "announcementVisible: группа совпадает");
+eq(announcementVisible({ audience: "GROUP:ПИ-231" }, { groupName: "ЭК-321", faculty: "Экономика" }), false, "announcementVisible: другая группа");
+eq(announcementVisible({ audience: "FACULTY:ИТ" }, { groupName: "ПИ-231", faculty: "ИТ" }), true, "announcementVisible: факультет совпадает");
+eq(announcementVisible({ audience: "FACULTY:ИТ" }, { groupName: "ЭК-321", faculty: "Экономика" }), false, "announcementVisible: другой факультет");
+eq(announcementVisible({ audience: "GROUP:ПИ-231" }, null), false, "announcementVisible: нет профиля — не видно");
+
+/* ---------- приветствие по времени суток ---------- */
+eq(greetingFor(6 * 60), "Доброе утро", "greetingFor: 6:00 — утро");
+eq(greetingFor(13 * 60), "Добрый день", "greetingFor: 13:00 — день");
+eq(greetingFor(20 * 60), "Добрый вечер", "greetingFor: 20:00 — вечер");
+eq(greetingFor(3 * 60), "Доброй ночи", "greetingFor: 3:00 — ночь");
 
 /* ---------- итог ---------- */
 if (failures.length) {
