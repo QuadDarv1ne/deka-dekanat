@@ -23,16 +23,15 @@
 
 | Ветка | Назначение |
 | --- | --- |
-| `v.1.0` | Первая зелёная версия интерфейса |
-| `v.2.0` | Улучшенная фиолетовая версия с расширенным функционалом |
-| `main` | Текущая версия проекта |
+| [`v.1.0`](https://github.com/QuadDarv1ne/deka-dekanat/tree/v.1.0) | Первая версия на Next.js |
+| [`v.2.0`](https://github.com/QuadDarv1ne/deka-dekanat/tree/v.2.0) | Новая версия на SvelteKit |
+| [`main`](https://github.com/QuadDarv1ne/deka-dekanat/tree/main) | Основная ветка проекта |
 
-Переключение версий:
+Чтобы клонировать именно эту версию:
 
-```powershell
-git switch v.1.0
-git switch v.2.0
-git switch main
+```bash
+git clone --branch v.2.0 --single-branch https://github.com/QuadDarv1ne/deka-dekanat.git
+cd deka-dekanat
 ```
 
 ## Скриншоты интерфейса
