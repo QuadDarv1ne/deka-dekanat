@@ -25,9 +25,16 @@
 
 | Ветка | Назначение |
 | --- | --- |
-| `v.1.0` | Зелёная версия на Next.js |
-| `v.2.0` | Фиолетовая улучшенная версия на SvelteKit |
-| `main` | Текущая версия проекта |
+| [`v.1.0`](https://github.com/QuadDarv1ne/deka-dekanat/tree/v.1.0) | Первая версия на Next.js |
+| [`v.2.0`](https://github.com/QuadDarv1ne/deka-dekanat/tree/v.2.0) | Новая версия на SvelteKit |
+| [`main`](https://github.com/QuadDarv1ne/deka-dekanat/tree/main) | Основная ветка проекта |
+
+Чтобы клонировать основную ветку, укажите её в команде:
+
+```bash
+git clone --branch main --single-branch https://github.com/QuadDarv1ne/deka-dekanat.git
+cd deka-dekanat
+```
 
 ## Скриншоты интерфейса
 
