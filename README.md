@@ -376,4 +376,4 @@ Dockerfile, docker-compose.yml, docker-compose.ollama.yml, DEPLOY.md,
 | `study-plan` | Аттестации, приоритеты подготовки и отметки готовности |
 | `campus` | Поэтажная схема, сопоставление аудиторий и маршруты по графу |
 
-Подробнее: [Архитектура](docs/architecture.md) · [Развёртывание](docs/deployment.md) · [Сверка со старым проектом](docs/feature-audit.md)
+**Подробнее:** [Архитектура](docs/architecture.md) · [Развёртывание](docs/deployment.md) · [Сверка со старым проектом](docs/feature-audit.md)
