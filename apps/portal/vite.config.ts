@@ -12,6 +12,9 @@ export default defineConfig(() => {
         paths: { origin: process.env.ORIGIN ?? 'http://127.0.0.1:5180' }
       })
     ],
-    build: { target: 'es2022', sourcemap: false }
+    build: { target: 'es2022', sourcemap: false },
+    // The portal ships plain CSS; without an inline config Vite walks up to the
+    // repository root and loads the Next.js PostCSS config (Tailwind) from there.
+    css: { postcss: {} }
   };
 });

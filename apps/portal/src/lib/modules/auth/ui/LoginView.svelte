@@ -1,6 +1,5 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import Campus from '#shared/ui/CampusIllustration.svelte';
   import Icon from '#shared/ui/Icon.svelte';
   import Brand from '#shared/ui/Brand.svelte';
   type PageProps = {
@@ -23,10 +22,10 @@
   <section class="welcome">
     <a class="brand" href="/" aria-label="Дека"><Brand /></a>
     <div class="welcome-body">
-      <h2>Ваш личный кабинет</h2>
-      <p>Расписание, оценки и обращения в деканат.</p>
-      <Campus />
-    </div>
+    <h2>Ваш личный кабинет</h2>
+    <p>Расписание, оценки и обращения в деканат.</p>
+    <img src="/img/v2.0/login.jpg" alt="Дека" class="login-illustration" />
+  </div>
   </section>
   <main class="login-main">
     <div class="login-form">
@@ -135,6 +134,12 @@
   .welcome-body :global(.campus) {
     display: block;
     width: min(360px, 80%);
+    margin: 27px auto 23px;
+  }
+  .login-illustration {
+    display: block;
+    width: min(360px, 80%);
+    height: auto;
     margin: 27px auto 23px;
   }
   .login-main {
