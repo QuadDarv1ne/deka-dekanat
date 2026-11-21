@@ -290,9 +290,9 @@ Dockerfile, docker-compose.yml, docker-compose.ollama.yml, DEPLOY.md,
 | --- | --- | --- |
 | ![Объявления](img/v.2.0/announcements.png) | ![Профиль](img/v.2.0/profile.png) | ![Кампус](img/v.2.0/campus.png) |
 
-| Моё заявление | Готовый документ | Техническая поддержка |
-| --- | --- | --- |
-| ![Заявление](img/v.2.0/requests.png) | ![Готовый документ](img/v.2.0/requests-document.png) | ![Поддержка](img/v.2.0/support.png) |
+| Заявление в работе | Готово к выдаче | Готовый документ | Техническая поддержка |
+| --- | --- | --- | --- |
+| ![В работе](img/v.2.0/requests-in-working.png) | ![Готово к выдаче](img/v.2.0/requests.png) | ![Готовый документ](img/v.2.0/requests-document.png) | ![Поддержка](img/v.2.0/support.png) |
 
 #### Ассеты
 
