@@ -21,13 +21,20 @@
 - [Безопасность](#как-устроена-безопасность)
 - [Структура проекта](#структура-проекта)
 
-### Выбор ветки
+### Выбор версии
 
-| Ветка | Интерфейс |
+| Ветка | Версия |
 | --- | --- |
-| `v.1.0` | Зелёная версия на Next.js |
-| `v.2.0` | Фиолетовая улучшенная версия на SvelteKit |
-| `main` | Текущая версия проекта |
+| [`v.1.0`](https://github.com/QuadDarv1ne/deka-dekanat/tree/v.1.0) | Первая версия на Next.js |
+| [`v.2.0`](https://github.com/QuadDarv1ne/deka-dekanat/tree/v.2.0) | Новая версия на SvelteKit |
+| [`main`](https://github.com/QuadDarv1ne/deka-dekanat/tree/main) | Основная ветка проекта |
+
+Чтобы клонировать именно эту версию, укажите её при клонировании, например:
+
+```bash
+git clone --branch v.1.0 --single-branch https://github.com/QuadDarv1ne/deka-dekanat.git
+cd deka-dekanat
+```
 
 | Экран входа | Главный экран студента | Сотрудник деканата |
 | --- | --- | --- |
@@ -104,7 +111,7 @@ Referrer-Policy, Permissions-Policy), вход ограничен 10 попыт�
 Вариант с Bun:
 
 ```bash
-git clone https://github.com/QuadDarv1ne/deka-dekanat.git
+git clone --branch v.1.0 --single-branch https://github.com/QuadDarv1ne/deka-dekanat.git
 cd deka-dekanat
 bun install
 cp .env.example .env        # и подставьте свой AUTH_SECRET (openssl rand -hex 32)
