@@ -14,43 +14,68 @@ function baseUrl() {
     throw new Error('AI_ENDPOINT_NOT_LOCAL');
   return raw.replace(/\/$/, '');
 }
+function authHeader(): Record<string, string> {
+  const key = process.env.AI_API_KEY;
+  return key ? { Authorization: `Bearer ${key}` } : {};
+}
 export async function modelAvailable() {
   try {
+    // llama-server answers 503 while it is still loading the model, so a false
+    // result here means "not ready yet", not necessarily "broken".
     return (
       await fetch(new URL('../health', baseUrl() + '/'), {
         signal: AbortSignal.timeout(1500),
-        redirect: 'error'
+        redirect: 'error',
+        headers: authHeader()
       })
     ).ok;
   } catch {
     return false;
   }
 }
+const MODEL_LOAD_TIMEOUT = 150000;
+async function requestCompletion(messages: ModelMessage[], signal: AbortSignal) {
+  const body = JSON.stringify({
+    model: process.env.AI_MODEL ?? 'deka-assistant',
+    messages,
+    stream: true,
+    temperature: 0.3,
+    top_p: 0.95,
+    min_p: 0,
+    max_tokens: 600,
+    reasoning_effort: 'none',
+    chat_template_kwargs: { enable_thinking: false }
+  });
+  const deadline = Date.now() + MODEL_LOAD_TIMEOUT;
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(baseUrl() + '/chat/completions', {
+      method: 'POST',
+      redirect: 'error',
+      signal: AbortSignal.any([signal, AbortSignal.timeout(90000)]),
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body
+    });
+    // On a cold start llama-server replies 503 until the weights are loaded
+    // (about 80 seconds on the 2 GB machine). Waiting here turns a confusing
+    // "Не удалось получить ответ" into a slow but successful first answer.
+    if (response.status === 503 && attempt < 30 && Date.now() < deadline) {
+      await response.body?.cancel().catch(() => {});
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      continue;
+    }
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => {});
+      throw new Error(`MODEL_UNAVAILABLE_${response.status}`);
+    }
+    return response;
+  }
+}
 export async function* generate(
   messages: ModelMessage[],
   signal: AbortSignal
 ): AsyncGenerator<string> {
-  const response = await fetch(baseUrl() + '/chat/completions', {
-    method: 'POST',
-    redirect: 'error',
-    signal: AbortSignal.any([signal, AbortSignal.timeout(90000)]),
-    headers: {
-      'Content-Type': 'application/json',
-      ...(process.env.AI_API_KEY ? { Authorization: `Bearer ${process.env.AI_API_KEY}` } : {})
-    },
-    body: JSON.stringify({
-      model: process.env.AI_MODEL ?? 'deka-assistant',
-      messages,
-      stream: true,
-      temperature: 0.3,
-      top_p: 0.95,
-      min_p: 0,
-      max_tokens: 600,
-      reasoning_effort: 'none',
-      chat_template_kwargs: { enable_thinking: false }
-    })
-  });
-  if (!response.ok || !response.body) throw new Error('MODEL_UNAVAILABLE');
+  const response = await requestCompletion(messages, signal);
+  if (!response.body) throw new Error('MODEL_UNAVAILABLE');
   const reader = response.body.getReader(),
     decoder = new TextDecoder();
   let buffer = '';

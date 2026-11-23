@@ -83,6 +83,15 @@ export async function answer(
     await completeTurn(turn.answerId, text, sources);
     send({ type: 'done', sources });
   } catch (error) {
+    // Without a log entry a failed turn is invisible in production: the client
+    // only sees a generic message, so the real cause (context overflow, model
+    // 503, timeout) must be recorded here.
+    console.error('[assistant] turn failed', {
+      threadId: turn.threadId,
+      answerId: turn.answerId,
+      aborted: abort.aborted,
+      error: error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+    });
     await failTurn(turn.answerId);
     if (!abort.aborted)
       send({ type: 'error', message: 'Не удалось получить ответ. Попробуйте ещё раз.' });

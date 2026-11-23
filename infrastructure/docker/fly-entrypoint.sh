@@ -192,6 +192,15 @@ start_assistant() {
       echo "[fly-entrypoint] Assistant ready (after ${i}s)."
       return 0
     fi
+    # The kernel kills llama-server when the model does not fit in RAM. Without
+    # this check the loop would keep waiting for two minutes and hide the real
+    # cause; report it right away instead.
+    if ! kill -0 "$(cat /tmp/ai.pid)" 2>/dev/null; then
+      echo "[fly-entrypoint] llama-server exited before becoming ready (likely out of memory)."
+      tail -20 /tmp/llama.log || true
+      rm -f /tmp/ai.pid
+      return 0
+    fi
     if [ "$i" = "120" ]; then
       echo "[fly-entrypoint] Assistant did not become ready; continuing without it."
       tail -20 /tmp/llama.log || true
