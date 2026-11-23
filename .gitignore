@@ -92,3 +92,7 @@ var/
 **/.output/
 **/.test-build/
 **/.sites-runtime/
+
+# Внутренние файлы Koda CLI и временная папка архива деплоя
+.koda/
+new/

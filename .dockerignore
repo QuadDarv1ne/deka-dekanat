@@ -1,0 +1,49 @@
+# Исключаем node_modules — они будут переустановлены внутри remote builder
+# (npm ci из package-lock.json).
+node_modules/
+apps/portal/node_modules/
+
+# Git-данные
+.git/
+.gitattributes
+
+# Локальные данные и сборки
+var/
+**/.svelte-kit/
+**/.output/
+**/.test-build/
+**/.sites-runtime/
+
+# Архив деплоя
+new/
+
+# Изображения (не нужны для билда)
+img/
+
+# Локальные скрипты проверки размеров
+var/size-check.ps1
+
+# Документация
+docs/
+**/*.md
+
+# Инфраструктура не-директория
+DEPLOY.md
+deka.ps1
+fly.toml
+render.yaml
+railway.json
+LICENSE
+.flyignore
+
+# Тесты (не нужны для production-билда)
+apps/portal/tests/
+tests/
+
+# Корневые package-файлы (билд идёт из apps/portal)
+package.json
+package-lock.json
+
+# Прочие
+.prompt_history
+.dockerenv

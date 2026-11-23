@@ -10,7 +10,7 @@
     "#server/*": "./src/lib/server/*"
   },
   "engines": {
-    "node": ">=26.13.0 <27"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "dev": "vite dev --host 127.0.0.1 --port 5180 --strictPort",
@@ -22,6 +22,7 @@
     "db:migrate": "node --env-file-if-exists=../../var/config/application.env tooling/database/migrate.mjs",
     "db:seed": "node --env-file-if-exists=../../var/config/application.env tooling/database/seed.mjs",
     "test": "node --env-file=../../var/config/application.env tooling/testing/run-tests.mjs",
+    "postinstall": "node scripts/patch-csrf.mjs",
     "prepare": "svelte-kit sync"
   },
   "dependencies": {

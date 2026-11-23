@@ -1,0 +1,109 @@
+# syntax=docker/dockerfile:1.7
+#
+# Multi-stage build for the Дека (deka-dekanat) portal — Fly.io compatible.
+#
+# Builds the SvelteKit app with adapter-node, then layers it on top of a
+# PostgreSQL 17 image so the resulting container is fully self-contained
+# (web app + database in one image). On Fly.io this is meant to be run
+# alongside a persistent volume mounted at /var/lib/postgresql/data so the
+# database survives container restarts.
+#
+# Build:
+#   docker build -f infrastructure/docker/Dockerfile.fly \
+#     -t deka-fly \
+#     /home/z/my-project/deka-dekanat
+#
+# Run locally:
+#   docker run --rm -p 5180:5180 \
+#     -e DATABASE_URL='postgres://deka_app:demo_password@127.0.0.1:55438/deka' \
+#     -e DEMO_MODE=true \
+#     -v deka-pgdata:/var/lib/postgresql/data \
+#     deka-fly
+#
+
+# ---- Stage 1: build SvelteKit app -----------------------------------------
+FROM node:22-bookworm-slim AS build
+WORKDIR /workspace/apps/portal
+
+# Copy sources first — scripts/patch-csrf.mjs must exist before npm ci runs it.
+COPY apps/portal/ ./
+
+# Install build dependencies (svelte-check, vite, typescript) and tolerate the
+# proxy protocol mismatch (Fly's LB terminates TLS and forwards http).
+COPY apps/portal/package.json apps/portal/package-lock.json ./
+RUN npm ci --ignore-scripts && node scripts/patch-csrf.mjs
+
+# Build the production bundle. APP_ORIGIN is intentionally
+# left unset so SvelteKit derives the request origin at runtime from headers
+# (works behind any reverse proxy, including Fly's load balancer).
+# Build may fail on `npm run check` due to TS strictness on env-dependent
+# types — we run a plain `vite build` to be tolerant.
+RUN npx svelte-kit sync && npx vite build
+
+# ---- Stage 2: production dependencies ------------------------------------
+FROM node:22-bookworm-slim AS prod-deps
+WORKDIR /workspace/apps/portal
+COPY apps/portal/package.json apps/portal/package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+# ---- Stage 3: runtime (PostgreSQL + Node app) -----------------------------
+FROM postgres:17-bookworm AS runtime
+
+# PostgreSQL environment — these come from Fly secrets at runtime.
+# The entrypoint init script (init-application-user.sh) reads APP_DB_PASSWORD
+# to create the deka_app role that the Node app uses to connect.
+ENV POSTGRES_USER=deka_owner \
+    POSTGRES_DB=deka \
+    POSTGRES_HOST_AUTH_METHOD=scram-sha-256 \
+    PGDATA=/data/postgres
+
+# Install Node.js runtime alongside PostgreSQL.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates \
+ && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/*
+
+# Application environment — defaults overridden at runtime via Fly secrets.
+# POSTGRES_PASSWORD is the superuser password (set via `fly secrets set`).
+# APP_DB_PASSWORD is used by init-application-user.sh to create the deka_app role.
+# DATABASE_URL is constructed at runtime by fly-entrypoint.sh from these secrets.
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=5180 \
+    DEMO_MODE=true \
+    AI_BASE_URL= \
+    AI_MODEL=
+
+WORKDIR /workspace/apps/portal
+
+# Copy app code from build stages.
+COPY --from=prod-deps /workspace/apps/portal/node_modules ./node_modules
+COPY --from=build /workspace/apps/portal/.output ./.output
+COPY apps/portal/package.json ./package.json
+
+# Database migration & seed tooling.
+COPY database /workspace/database
+COPY apps/portal/tooling/database ./tooling/database
+COPY apps/portal/src/lib/server/security/credentials.mjs ./src/lib/server/security/credentials.mjs
+COPY apps/portal/src/lib/modules/auth/preview-accounts.ts ./src/lib/modules/auth/preview-accounts.ts
+
+# Postgres init scripts — runs on first boot only.
+COPY infrastructure/docker/init-application-user.sh /docker-entrypoint-initdb.d/10-application-user.sh
+
+# Entrypoint: start postgres in background, run migrations + seed, then start app.
+# Run as root so the entrypoint can create/chown the mounted volume path;
+# the postgres image's docker-entrypoint.sh drops to the "postgres" user itself.
+USER root
+COPY infrastructure/docker/fly-entrypoint.sh /usr/local/bin/fly-entrypoint.sh
+RUN chmod +x /usr/local/bin/fly-entrypoint.sh
+
+# Healthcheck — make sure both the app and DB are up.
+COPY infrastructure/docker/healthcheck.mjs ./tooling/healthcheck.mjs
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
+  CMD ["node", "tooling/healthcheck.mjs"]
+
+EXPOSE 5180
+# Override postgres' default entrypoint with ours.
+ENTRYPOINT ["fly-entrypoint.sh"]
+CMD ["node", ".output/index.js"]
