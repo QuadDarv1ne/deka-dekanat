@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick, untrack } from 'svelte';
+  import { enhance, type SubmitFunction } from '$app/forms';
   import { goto, invalidateAll } from '$app/navigation';
   import Icon from '#shared/ui/Icon.svelte';
   import Brand from '#shared/ui/Brand.svelte';
@@ -22,6 +23,45 @@
   let draft = $state(untrack(() => data.question ?? '')),
     pending = $state(false),
     error = $state('');
+  let editingId = $state<string | null>(null),
+    editTitle = $state(''),
+    confirmId = $state<string | null>(null),
+    historyError = $state('');
+  function startRename(thread: ChatThread) {
+    if (pending) return;
+    historyError = '';
+    confirmId = null;
+    editingId = thread.id;
+    editTitle = thread.title;
+  }
+  function startDelete(thread: ChatThread) {
+    if (pending) return;
+    historyError = '';
+    editingId = null;
+    confirmId = thread.id;
+  }
+  const renameThread: SubmitFunction = () => {
+    return async ({ result, update }) => {
+      if (result.type === 'failure') {
+        const data = result.data as { message?: string } | undefined;
+        historyError = data?.message ?? 'Не удалось переименовать чат.';
+        return;
+      }
+      editingId = null;
+      await update();
+    };
+  };
+  const deleteThread: SubmitFunction = () => {
+    return async ({ result, update }) => {
+      if (result.type === 'failure') {
+        const data = result.data as { message?: string } | undefined;
+        historyError = data?.message ?? 'Не удалось удалить чат.';
+        return;
+      }
+      confirmId = null;
+      await update();
+    };
+  };
   let transcript: HTMLDivElement;
   let controller: AbortController | undefined;
   $effect(() => {
@@ -163,15 +203,78 @@
         if (pending) event.preventDefault();
       }}><Icon name="plus" size={16} />Новый чат</a
     ><span class="section-label">История</span>
+    {#if historyError}<p class="history-error" role="alert">{historyError}</p>{/if}
     <nav aria-label="История чатов">
-      {#each data.threads as thread}<a
-          href={`/assistant?thread=${thread.id}`}
-          class:active={thread.id === threadId}
-          aria-current={thread.id === threadId ? 'page' : undefined}
-          onclick={(event) => {
-            if (pending) event.preventDefault();
-          }}><Icon name="chat" size={16} /><span>{thread.title}</span></a
-        >{:else}<p>Ваши чаты появятся здесь.</p>{/each}
+      {#each data.threads as thread}
+        <div class="thread-row" class:active={thread.id === threadId}>
+          {#if editingId === thread.id}
+            <form method="POST" action="?/rename" use:enhance={renameThread} class="thread-edit">
+              <input type="hidden" name="threadId" value={thread.id} />
+              <label class="sr-only" for={`thread-title-${thread.id}`}>Название чата</label>
+              <input
+                id={`thread-title-${thread.id}`}
+                name="title"
+                maxlength="100"
+                required
+                bind:value={editTitle}
+                onkeydown={(event) => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    editingId = null;
+                  }
+                }}
+              />
+              <button class="thread-action" aria-label="Сохранить название"
+                ><Icon name="check" size={14} /></button
+              >
+              <button
+                type="button"
+                class="thread-action"
+                aria-label="Отменить переименование"
+                onclick={() => (editingId = null)}><Icon name="x" size={14} /></button
+              >
+            </form>
+          {:else if confirmId === thread.id}
+            <div class="thread-confirm">
+              <span>Удалить чат?</span>
+              <form method="POST" action="?/delete" use:enhance={deleteThread}>
+                <input type="hidden" name="threadId" value={thread.id} />
+                <button class="thread-action danger" aria-label="Удалить чат"
+                  ><Icon name="trash" size={14} /></button
+                >
+              </form>
+              <button
+                type="button"
+                class="thread-action"
+                aria-label="Отменить удаление"
+                onclick={() => (confirmId = null)}><Icon name="x" size={14} /></button
+              >
+            </div>
+          {:else}
+            <a
+              href={`/assistant?thread=${thread.id}`}
+              aria-current={thread.id === threadId ? 'page' : undefined}
+              onclick={(event) => {
+                if (pending) event.preventDefault();
+              }}><Icon name="chat" size={16} /><span>{thread.title}</span></a
+            >
+            <div class="thread-actions">
+              <button
+                type="button"
+                class="thread-action"
+                aria-label={`Переименовать чат «${thread.title}»`}
+                onclick={() => startRename(thread)}><Icon name="pencil" size={14} /></button
+              >
+              <button
+                type="button"
+                class="thread-action danger"
+                aria-label={`Удалить чат «${thread.title}»`}
+                onclick={() => startDelete(thread)}><Icon name="trash" size={14} /></button
+              >
+            </div>
+          {/if}
+        </div>
+      {:else}<p>Ваши чаты появятся здесь.</p>{/each}
     </nav>
   </aside>
   <section class="chat-panel panel" aria-label="Чат с помощником">
@@ -313,6 +416,7 @@
   }
   .chat-history nav a {
     min-width: 0;
+    flex: 1;
     display: flex;
     align-items: center;
     gap: 9px;
@@ -322,9 +426,96 @@
     border-radius: 9px;
     line-height: 1.5;
   }
-  .chat-history nav a.active {
+  .thread-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 9px;
+  }
+  .thread-row.active {
     background: #f0edfb;
+  }
+  .thread-row.active > a {
     color: #6a58b7;
+  }
+  .thread-row:hover {
+    background: #f7f6fb;
+  }
+  .thread-actions {
+    display: flex;
+    gap: 1px;
+    flex-shrink: 0;
+    padding-right: 3px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .thread-row:hover .thread-actions,
+  .thread-row:focus-within .thread-actions,
+  .thread-row.active .thread-actions {
+    opacity: 1;
+  }
+  .thread-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #8b8f9e;
+  }
+  .thread-action:hover {
+    background: #ece8f9;
+    color: #6a58b7;
+  }
+  .thread-action.danger:hover {
+    background: #fbeaee;
+    color: #b34357;
+  }
+  .thread-edit {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    padding: 4px 3px 4px 8px;
+  }
+  .thread-edit input {
+    min-width: 0;
+    flex: 1;
+    width: 100%;
+    border: 1px solid #d8d2e8;
+    border-radius: 7px;
+    padding: 6px 8px;
+    font-size: 12px;
+    background: white;
+    color: #4f5264;
+  }
+  .thread-edit input:focus {
+    outline: none;
+    border-color: #a999d2;
+    box-shadow: 0 0 0 2px #f2eefb;
+  }
+  .thread-confirm {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    padding: 4px 3px 4px 10px;
+    font-size: 11px;
+    color: #a96776;
+  }
+  .thread-confirm span {
+    flex: 1;
+    min-width: 0;
+  }
+  .thread-confirm form {
+    display: flex;
+  }
+  .history-error {
+    font-size: 11px;
+    color: #ad5d70;
+    margin: 0 8px 8px;
   }
   .chat-history nav a:hover {
     background: #f7f6fb;
