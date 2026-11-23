@@ -8,7 +8,7 @@
 #   4. Create the application database + role (idempotent).
 #   5. Run SQL migrations (idempotent — applies only pending migrations).
 #   6. Seed demo data (idempotent — only if the database has no users).
-#   7. exec the Node app as PID 1.
+#   7. Run the Node app and shut everything down cleanly on SIGTERM/SIGINT.
 #
 # This entrypoint runs as root inside an image that has both PostgreSQL
 # binaries and Node.js installed (see Dockerfile.fly). It drives PostgreSQL
@@ -25,19 +25,17 @@ set -euo pipefail
 
 echo "[fly-entrypoint] Starting Дека container..."
 
-# ---- 0. Verify secrets ---------------------------------------------------
-# POSTGRES_PASSWORD creates the deka_owner superuser (and is used for
-# migrations); APP_DB_PASSWORD is the password of the unprivileged deka_app
-# role the Node app connects with. Both come from `fly secrets set`.
-if [ -z "${POSTGRES_PASSWORD:-}" ] || [ -z "${APP_DB_PASSWORD:-}" ]; then
-  echo "[fly-entrypoint] ERROR: POSTGRES_PASSWORD and APP_DB_PASSWORD must be set."
-  echo "[fly-entrypoint]   fly secrets set POSTGRES_PASSWORD='<random>' APP_DB_PASSWORD='<random>'"
+# ---- 0. Validate required secrets ---------------------------------------
+# Without these the image defaults would silently fall back to the placeholder
+# password "demo_password" baked into Dockerfile.fly — refuse to start instead.
+if [ -z "${POSTGRES_PASSWORD:-}" ]; then
+  echo "[fly-entrypoint] FATAL: POSTGRES_PASSWORD secret is not set." >&2
   exit 1
 fi
-
-# Build the application's connection string from the runtime secrets. Keeping
-# it out of the image means no password is ever baked into a layer.
-export DATABASE_URL="postgres://deka_app:${APP_DB_PASSWORD}@127.0.0.1:5432/deka"
+if [ -z "${APP_DB_PASSWORD:-}" ]; then
+  echo "[fly-entrypoint] FATAL: APP_DB_PASSWORD secret is not set." >&2
+  exit 1
+fi
 
 PGDATA="${PGDATA:-/data/postgres}"
 export PGDATA
@@ -48,48 +46,48 @@ export PGPORT
 # (initdb --username), not the OS user "postgres".
 export PGUSER="${POSTGRES_USER:-deka_owner}"
 
+# Percent-encode a value so it can be embedded in a postgres:// URL. Passwords
+# set by hand may contain '@', ':', '/' or other reserved characters.
+urlencode() {
+  node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "$1"
+}
+
 # ---- 1. Prepare the data directory --------------------------------------
 # /data is the Fly volume root (uid 0). Let "postgres" create its subdirectory.
+# Only the top-level entries are re-owned: a recursive chown over a growing
+# cluster would slow down every cold start.
 mkdir -p /var/run/postgresql
 chown postgres:postgres /data /var/run/postgresql 2>/dev/null || true
 mkdir -p "$PGDATA"
+chown postgres:postgres "$PGDATA"
+chmod 700 "$PGDATA"
 
 # ---- 2. Initialize the cluster on first boot ----------------------------
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
   echo "[fly-entrypoint] Empty PGDATA — running initdb..."
-  chown -R postgres:postgres "$PGDATA"
-  chmod 700 "$PGDATA"
-  if [ -n "${POSTGRES_PASSWORD:-}" ]; then
-    # Give the superuser a password so TCP (scram) connections work.
-    umask 077
-    printf '%s' "$POSTGRES_PASSWORD" > /tmp/pg-superuser-pw
-    chown postgres:postgres /tmp/pg-superuser-pw
-    gosu postgres initdb -D "$PGDATA" \
-      --username="$POSTGRES_USER" \
-      --pwfile=/tmp/pg-superuser-pw \
-      --auth-local=trust \
-      --auth-host=scram-sha-256 \
-      --encoding=UTF8 \
-      --locale=C.UTF-8
-    rm -f /tmp/pg-superuser-pw
-  else
-    echo "[fly-entrypoint] WARNING: POSTGRES_PASSWORD is empty — using trust auth."
-    gosu postgres initdb -D "$PGDATA" \
-      --username="$POSTGRES_USER" \
-      --auth-local=trust \
-      --auth-host=trust \
-      --encoding=UTF8 \
-      --locale=C.UTF-8
-  fi
+  umask 077
+  printf '%s' "$POSTGRES_PASSWORD" > /tmp/pg-superuser-pw
+  chown postgres:postgres /tmp/pg-superuser-pw
+  gosu postgres initdb -D "$PGDATA" \
+    --username="$POSTGRES_USER" \
+    --pwfile=/tmp/pg-superuser-pw \
+    --auth-local=trust \
+    --auth-host=scram-sha-256 \
+    --encoding=UTF8 \
+    --locale=C.UTF-8
+  rm -f /tmp/pg-superuser-pw
 else
   echo "[fly-entrypoint] Existing PGDATA found — reusing it."
 fi
 
 # ---- 3. Start PostgreSQL in the background ------------------------------
+# Tee the server log so database problems are visible in `fly logs`, while
+# keeping a copy for the "did not become ready" diagnostic below.
 echo "[fly-entrypoint] Starting PostgreSQL..."
 gosu postgres postgres -D "$PGDATA" \
   -c listen_addresses=127.0.0.1 \
-  -c port="$PGPORT" >/tmp/pg.log 2>&1 &
+  -c port="$PGPORT" \
+  > >(tee /tmp/pg.log) 2>&1 &
 PG_PID=$!
 
 echo "[fly-entrypoint] Waiting for PostgreSQL to be ready..."
@@ -129,12 +127,15 @@ gosu postgres psql --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --set ON_
 ALTER ROLE deka_app PASSWORD :'application_password';
 SQL
 
-# Build the application's connection string from the runtime secrets.
-export DATABASE_URL="postgres://deka_app:${APP_DB_PASSWORD}@127.0.0.1:${PGPORT}/${POSTGRES_DB}"
+# Build the connection strings from the runtime secrets, percent-encoding the
+# passwords so reserved characters cannot corrupt the URL.
+APP_PW_ENC="$(urlencode "$APP_DB_PASSWORD")"
+OWNER_PW_ENC="$(urlencode "$POSTGRES_PASSWORD")"
+export DATABASE_URL="postgres://deka_app:${APP_PW_ENC}@127.0.0.1:${PGPORT}/${POSTGRES_DB}"
 
 # ---- 5. Run migrations as the owning role -------------------------------
 # Migrations need DDL privileges, so connect as the superuser/owner role.
-DATABASE_URL_OWNER="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD:-}@127.0.0.1:${PGPORT}/${POSTGRES_DB}"
+DATABASE_URL_OWNER="postgres://${POSTGRES_USER}:${OWNER_PW_ENC}@127.0.0.1:${PGPORT}/${POSTGRES_DB}"
 echo "[fly-entrypoint] Applying SQL migrations..."
 DATABASE_URL="$DATABASE_URL_OWNER" node tooling/database/migrate.mjs
 
@@ -148,12 +149,33 @@ else
   echo "[fly-entrypoint] DEMO_MODE=false, skipping demo seed."
 fi
 
-# ---- 7. Start the Node app (foreground, becomes PID 1) ------------------
+# ---- 7. Run the app, then stop PostgreSQL cleanly -----------------------
 echo "[fly-entrypoint] Starting Дека app on port ${PORT:-5180}..."
-trap "kill $PG_PID 2>/dev/null; exit 0" SIGTERM SIGINT
 
-# Keep PostgreSQL alive alongside the app; if it dies, the container exits.
-wait "$PG_PID" &
-WAIT_PID=$!
+shutdown() {
+  echo "[fly-entrypoint] Shutdown signal received — stopping app and PostgreSQL..."
+  kill -TERM "$APP_PID" 2>/dev/null || true
+  wait "$APP_PID" 2>/dev/null || true
+  # SIGINT makes PostgreSQL shut down fast; SIGTERM waits for a clean shutdown.
+  kill -TERM "$PG_PID" 2>/dev/null || true
+  wait "$PG_PID" 2>/dev/null || true
+  echo "[fly-entrypoint] Stopped."
+  exit 0
+}
 
-exec node .output/index.js
+node .output/index.js &
+APP_PID=$!
+trap shutdown SIGTERM SIGINT
+
+# Exit when either process dies: a dead app is useless, and a dead database
+# means the app cannot serve requests anyway.
+set +e
+wait -n "$APP_PID" "$PG_PID"
+CHILD_EXIT=$?
+set -e
+
+echo "[fly-entrypoint] A child process exited (code ${CHILD_EXIT}); shutting down."
+kill -TERM "$APP_PID" "$PG_PID" 2>/dev/null || true
+wait "$APP_PID" 2>/dev/null || true
+wait "$PG_PID" 2>/dev/null || true
+exit "$CHILD_EXIT"
