@@ -70,6 +70,10 @@ export async function answer(
       remaining -= content.length;
     }
     const prompt: ModelMessage[] = [{ role: 'system', content: systemContent }, ...recent];
+    // A small model mirrors the language of the last user message, so the
+    // Russian-language reminder is repeated inside that message as well.
+    const lastUser = prompt.findLast((m) => m.role === 'user');
+    if (lastUser) lastUser.content += '\n\n(Ответь по-русски.)';
     let raw = '',
       text = '';
     for await (const chunk of generate(prompt, abort)) {

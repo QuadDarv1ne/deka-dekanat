@@ -3,7 +3,8 @@ import { lessons } from '#modules/academics/server/academic.repository.server.ts
 import { studentAttendance } from '#modules/academics/server/attendance.repository.server.ts';
 import { countAttendance } from '#modules/academics/student-progress.policy.ts';
 import { readyStudentRequests } from '#modules/requests/server/ready-requests.repository.server.ts';
-import { requestKinds } from '#modules/requests/request.labels.ts';
+import { listRequests } from '#modules/requests/server/request.repository.server.ts';
+import { requestKinds, statusNames } from '#modules/requests/request.labels.ts';
 import { fullDate, time } from '#shared/formatting.ts';
 import type { ChatSource } from '../assistant.types.ts';
 
@@ -60,6 +61,33 @@ export async function cabinetFact(
               : [])
           ].join('\n')
         : 'Готовых к выдаче документов пока нет.',
+      sources: [{ id: 'requests', title: 'Мои заявления', href: '/requests' }]
+    };
+  }
+  if (
+    /^сколько (?:у меня )?(?:сейчас )?(?:активных |открытых )?(?:заявлени|заявок|обращени)/u.test(
+      text
+    ) ||
+    /^какие (?:у меня )?(?:заявлени|заявки|обращени) (?:сейчас )?в работе$/u.test(text)
+  ) {
+    const active = (await listRequests(user)).filter((item) =>
+      ['new', 'in_progress', 'ready'].includes(item.status)
+    );
+    if (!active.length)
+      return {
+        text: 'Активных заявлений нет.',
+        sources: [{ id: 'requests', title: 'Мои заявления', href: '/requests' }]
+      };
+    return {
+      text: [
+        `Активных заявлений: ${active.length}.`,
+        ...active
+          .slice(0, 4)
+          .map(
+            (item) =>
+              `${requestKinds[item.kind]}, заявление №${item.number}: ${statusNames[item.status]}.`
+          )
+      ].join('\n'),
       sources: [{ id: 'requests', title: 'Мои заявления', href: '/requests' }]
     };
   }

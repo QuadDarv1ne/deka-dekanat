@@ -1,11 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import { transaction } from '#server/database/postgres.ts';
+import { bootId } from '#server/runtime/boot-id.ts';
 
 export async function reserveStudyAdvice(userId: string) {
   return transaction(async (db) => {
     // Share the lock, concurrency ceiling and quota used by beginTurn.
     await db.query('SELECT pg_advisory_xact_lock(882705110)');
-    await db.query('DELETE FROM assistant_leases WHERE expires_at<now()');
+    // See beginTurn: leases written by a previous process are stale.
+    await db.query(
+      'DELETE FROM assistant_leases WHERE expires_at<now() OR boot_id IS DISTINCT FROM $1',
+      [bootId]
+    );
     const active = await db.query<{ same_user: boolean }>(
       'SELECT user_id=$1 AS same_user FROM assistant_leases',
       [userId]
@@ -28,8 +33,8 @@ export async function reserveStudyAdvice(userId: string) {
 
     const token = randomUUID();
     await db.query(
-      "INSERT INTO assistant_leases(user_id,token,expires_at) VALUES($1,$2,now()+interval '120 seconds')",
-      [userId, token]
+      "INSERT INTO assistant_leases(user_id,token,expires_at,boot_id) VALUES($1,$2,now()+interval '120 seconds',$3)",
+      [userId, token, bootId]
     );
     return { status: 'reserved', token } as const;
   });
