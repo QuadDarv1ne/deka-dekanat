@@ -385,7 +385,7 @@ Dockerfile, docker-compose.yml, docker-compose.ollama.yml, DEPLOY.md,
 
 **Подробнее:** [Архитектура](docs/architecture.md) · [Развёртывание](docs/deployment.md) · [Сверка со старым проектом](docs/feature-audit.md)
 
-### Лицензия
+## Лицензия
 
 [© DEKA DEKANAT - RESTRICTED USE LICENSE](./LICENSE)
 
