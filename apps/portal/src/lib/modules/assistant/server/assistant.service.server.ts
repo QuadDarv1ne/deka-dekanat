@@ -51,7 +51,10 @@ export async function answer(
     const systemContent =
       instruction +
       '\nВсе личные записи относятся только к текущему пользователю. Не приписывай их человеку из вопроса. При отсутствии данных скажи об этом прямо. В references приведены проверенные учебные сведения: следуй им. Не добавляй задания, презентации или практикумы, которых нет в данных. Советы предлагай как необязательные шаги. Не предлагай пользователю выполнять разрушительные команды над порталом.\nДанные личного кабинета:\n' +
-      context.text;
+      context.text +
+      // A 1.5B model follows instructions placed at the end of the system prompt
+      // far more reliably than the same wording at the very beginning.
+      '\n\nНапоминание: ответь пользователю по-русски.';
     // The prompt budget must fit llama-server's --ctx-size (4096 tokens) next to
     // the 600-token answer, and the KV cache must fit the 2 GB Fly machine.
     // Russian text costs roughly 2–2.5 characters per token, so 4200 characters
