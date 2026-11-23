@@ -10,6 +10,17 @@
     "windowsCpuArchive": "llama-b12180-bin-win-cpu-x64.zip",
     "sha256": "b272cddf0e9c0692df0587b6f4cb8de4296e2d136b1b5b095ac0fe9807deeb20",
     "windowsVulkanArchive": "llama-b12180-bin-win-vulkan-x64.zip",
-    "windowsVulkanSha256": "7f22ed7e2dcd241c200844270d0c05d312fcd13971057e50fd7b0d3f279dcfd6"
+    "windowsVulkanSha256": "7f22ed7e2dcd241c200844270d0c05d312fcd13971057e50fd7b0d3f279dcfd6",
+    "linuxX64Archive": "llama-b12649-bin-ubuntu-x64.tar.gz",
+    "linuxX64Sha256": "619afdef397198af6f03aa5ed892e5d1cf6e156b2c4183a10ee38d0e04840fe1"
+  },
+  "fly": {
+    "comment": "Lighter model used by the single-container Fly.io deployment. The 2B default above needs ~2GB RSS and does not fit the 2GB machine alongside PostgreSQL.",
+    "repository": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+    "revision": "main",
+    "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "bytes": 1117320736,
+    "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+    "license": "Apache-2.0"
   }
 }

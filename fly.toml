@@ -14,6 +14,12 @@ primary_region = 'fra'
   HOST = '0.0.0.0'
   NODE_ENV = 'production'
   PORT = '5180'
+  # Local assistant: llama-server is started by fly-entrypoint.sh on this port.
+  ASSISTANT_ENABLED = 'true'
+  AI_BASE_URL = 'http://127.0.0.1:5188/v1'
+  AI_MODEL = 'deka-assistant'
+  MODEL_DIRECTORY = '/data/models'
+  RUNTIME_DIRECTORY = '/data/llama'
 
 [[mounts]]
   source = "deka_pgdata"
@@ -22,6 +28,11 @@ primary_region = 'fra'
 [[services]]
   protocol = 'tcp'
   internal_port = 5180
+  # Keep the machine running: the assistant loads a ~1GB model into RAM at boot,
+  # so stopping on idle would make the next visitor wait for a cold start.
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
 
   [[services.ports]]
     port = 80
@@ -47,5 +58,5 @@ primary_region = 'fra'
     tls_skip_verify = false
 
 [[vm]]
-  size = 'shared-cpu-1x'
-  memory = '512mb'
+  size = 'shared-cpu-2x'
+  memory = '2048mb'

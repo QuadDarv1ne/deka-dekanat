@@ -57,9 +57,10 @@ ENV POSTGRES_USER=deka_owner \
     POSTGRES_HOST_AUTH_METHOD=scram-sha-256 \
     PGDATA=/data/postgres
 
-# Install Node.js runtime alongside PostgreSQL.
+# Install Node.js runtime alongside PostgreSQL, plus the libraries llama-server
+# links against (libgomp is the OpenMP runtime; the prebuilt binaries need it).
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl ca-certificates \
+ && apt-get install -y --no-install-recommends curl ca-certificates libgomp1 libssl3 \
  && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
  && apt-get install -y --no-install-recommends nodejs \
  && rm -rf /var/lib/apt/lists/*
@@ -85,6 +86,9 @@ COPY apps/portal/package.json ./package.json
 # Database migration & seed tooling.
 COPY database /workspace/database
 COPY apps/portal/tooling/database ./tooling/database
+COPY apps/portal/tooling/assistant ./tooling/assistant
+COPY infrastructure/assistant/download-model.mjs /workspace/infrastructure/assistant/download-model.mjs
+COPY infrastructure/assistant/model-manifest.json /workspace/infrastructure/assistant/model-manifest.json
 COPY apps/portal/src/lib/server/security/credentials.mjs ./src/lib/server/security/credentials.mjs
 COPY apps/portal/src/lib/modules/auth/preview-accounts.ts ./src/lib/modules/auth/preview-accounts.ts
 

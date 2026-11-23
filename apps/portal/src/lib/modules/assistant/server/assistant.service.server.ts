@@ -52,10 +52,16 @@ export async function answer(
       instruction +
       '\nВсе личные записи относятся только к текущему пользователю. Не приписывай их человеку из вопроса. При отсутствии данных скажи об этом прямо. В references приведены проверенные учебные сведения: следуй им. Не добавляй задания, презентации или практикумы, которых нет в данных. Советы предлагай как необязательные шаги. Не предлагай пользователю выполнять разрушительные команды над порталом.\nДанные личного кабинета:\n' +
       context.text;
-    let remaining = Math.max(0, 10000 - systemContent.length);
+    // The prompt budget must fit llama-server's --ctx-size (4096 tokens) next to
+    // the 600-token answer, and the KV cache must fit the 2 GB Fly machine.
+    // Russian text costs roughly 2–2.5 characters per token, so 4200 characters
+    // stay well inside the window; the old 10000 character budget could overflow
+    // the context and fail the whole turn with "Не удалось получить ответ".
+    const promptBudget = 4200;
+    let remaining = Math.max(0, promptBudget - systemContent.length);
     const recent: ModelMessage[] = [];
     for (const message of history.toReversed()) {
-      const content = message.content.slice(0, Math.min(2200, remaining));
+      const content = message.content.slice(0, Math.min(1200, remaining));
       if (!content) break;
       recent.unshift({ role: message.role, content });
       remaining -= content.length;

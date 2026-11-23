@@ -17,7 +17,7 @@
 {#if data.redirect}
   <div class="redirecting">Входим в личный кабинет…</div>
 {:else}
-  <LoginView data={{ demo: data.demo, accounts: data.accounts }} form={form ?? null} />
+  <LoginView data={{ demo: data.demo, accounts: data.accounts }} {form} />
 {/if}
 
 <style>

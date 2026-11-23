@@ -10,10 +10,7 @@
   import { campusPath } from '#modules/campus/campus-links.ts';
 
   let { user, summary }: { user: User; summary: CabinetProfileData } = $props();
-  const identity = $derived([
-    ['Университетская почта', user.email],
-    ['Факультет', user.faculty_name]
-  ]);
+  const identity = $derived([['Университетская почта', user.email]]);
   const education = $derived([
     ['Факультет', user.faculty_name],
     ['Образовательная программа', user.program],

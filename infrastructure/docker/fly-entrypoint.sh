@@ -149,14 +149,82 @@ else
   echo "[fly-entrypoint] DEMO_MODE=false, skipping demo seed."
 fi
 
-# ---- 7. Run the app, then stop PostgreSQL cleanly -----------------------
+# ---- 7. Start the local assistant (background, best effort) -------------
+# The model (~1 GB) and the llama.cpp runtime are cached on the volume, so only
+# the first boot downloads them. Downloading happens in the background: the web
+# app must come up immediately so the platform health check passes, and the
+# assistant simply reports "temporarily unavailable" until it is ready.
+AI_PID=""
+# Per-boot API key: only this app should be able to drive the model server.
+# Generated in the parent shell (not inside the background installer) so the
+# Node app, started later in this same shell, receives the same value.
+if [ "${ASSISTANT_ENABLED:-true}" = "true" ] && [ -z "${AI_API_KEY:-}" ]; then
+  AI_API_KEY="$(head -c 32 /dev/urandom | base64 | tr -d '\n=+/')"
+  export AI_API_KEY
+fi
+
+start_assistant() {
+  if ! node tooling/assistant/install-fly-assistant.mjs; then
+    echo "[fly-entrypoint] Assistant setup failed; continuing without it."
+    return 0
+  fi
+  local model_file
+  model_file="$(ls "${MODEL_DIRECTORY:-/data/models}"/*.gguf 2>/dev/null | head -1)"
+  if [ -z "$model_file" ]; then
+    echo "[fly-entrypoint] No model file found; assistant stays disabled."
+    return 0
+  fi
+  echo "[fly-entrypoint] Starting llama-server with $(basename "$model_file")..."
+  # The bundled .so files live next to the binary; make sure they are found.
+  LD_LIBRARY_PATH="${RUNTIME_DIRECTORY:-/data/llama}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  "${RUNTIME_DIRECTORY:-/data/llama}/llama-server" \
+    --model "$model_file" \
+    --host 127.0.0.1 --port 5188 \
+    --ctx-size 4096 --threads 2 --parallel 1 \
+    --api-key "$AI_API_KEY" \
+    --jinja --no-ui --metrics >/tmp/llama.log 2>&1 &
+  echo $! >/tmp/ai.pid
+  for i in $(seq 1 120); do
+    # /health is unauthenticated, but send the key anyway so a future change to
+    # the server's auth rules cannot silently break this readiness probe.
+    if curl -fsS --max-time 2 -H "Authorization: Bearer $AI_API_KEY" \
+      http://127.0.0.1:5188/health >/dev/null 2>&1; then
+      echo "[fly-entrypoint] Assistant ready (after ${i}s)."
+      return 0
+    fi
+    if [ "$i" = "120" ]; then
+      echo "[fly-entrypoint] Assistant did not become ready; continuing without it."
+      tail -20 /tmp/llama.log || true
+    fi
+    sleep 1
+  done
+}
+
+if [ "${ASSISTANT_ENABLED:-true}" = "true" ]; then
+  echo "[fly-entrypoint] Preparing the local assistant in the background..."
+  start_assistant &
+else
+  echo "[fly-entrypoint] ASSISTANT_ENABLED=false, skipping the local model."
+fi
+
+# ---- 8. Run the app, then stop PostgreSQL cleanly -----------------------
 echo "[fly-entrypoint] Starting Дека app on port ${PORT:-5180}..."
 
+stop_assistant() {
+  # llama-server is started from a background function, so its PID is kept in
+  # /tmp/ai.pid rather than in a shell variable (a subshell cannot export it).
+  if [ -s /tmp/ai.pid ]; then
+    kill -TERM "$(cat /tmp/ai.pid)" 2>/dev/null || true
+    rm -f /tmp/ai.pid
+  fi
+}
+
 shutdown() {
-  echo "[fly-entrypoint] Shutdown signal received — stopping app and PostgreSQL..."
+  echo "[fly-entrypoint] Shutdown signal received — stopping app, assistant and PostgreSQL..."
   kill -TERM "$APP_PID" 2>/dev/null || true
   wait "$APP_PID" 2>/dev/null || true
-  # SIGINT makes PostgreSQL shut down fast; SIGTERM waits for a clean shutdown.
+  stop_assistant
+  # SIGTERM lets PostgreSQL shut down cleanly before the volume is unmounted.
   kill -TERM "$PG_PID" 2>/dev/null || true
   wait "$PG_PID" 2>/dev/null || true
   echo "[fly-entrypoint] Stopped."
@@ -178,4 +246,5 @@ echo "[fly-entrypoint] A child process exited (code ${CHILD_EXIT}); shutting dow
 kill -TERM "$APP_PID" "$PG_PID" 2>/dev/null || true
 wait "$APP_PID" 2>/dev/null || true
 wait "$PG_PID" 2>/dev/null || true
+stop_assistant
 exit "$CHILD_EXIT"
