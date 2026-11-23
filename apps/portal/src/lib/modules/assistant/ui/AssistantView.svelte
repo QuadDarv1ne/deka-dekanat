@@ -40,28 +40,60 @@
     editingId = null;
     confirmId = thread.id;
   }
+  function historyFailure(
+    result: {
+      type: string;
+      data?: { message?: string };
+      error?: { message?: string };
+    },
+    fallback: string
+  ) {
+    if (result.type === 'failure') return result.data?.message ?? fallback;
+    if (result.type === 'error') return result.error?.message ?? fallback;
+    return '';
+  }
   const renameThread: SubmitFunction = () => {
     return async ({ result, update }) => {
-      if (result.type === 'failure') {
-        const data = result.data as { message?: string } | undefined;
-        historyError = data?.message ?? 'Не удалось переименовать чат.';
+      const message = historyFailure(result, 'Не удалось переименовать чат.');
+      if (message) {
+        historyError = message;
         return;
       }
+      historyError = '';
       editingId = null;
       await update();
     };
   };
-  const deleteThread: SubmitFunction = () => {
+  const deleteThread: SubmitFunction = ({ formData }) => {
+    const id = String(formData.get('threadId') ?? '');
     return async ({ result, update }) => {
-      if (result.type === 'failure') {
-        const data = result.data as { message?: string } | undefined;
-        historyError = data?.message ?? 'Не удалось удалить чат.';
+      const message = historyFailure(result, 'Не удалось удалить чат.');
+      if (message) {
+        historyError = message;
         return;
       }
+      historyError = '';
       confirmId = null;
+      // The open chat has to leave ?thread=… before the page reloads, otherwise
+      // the load looks up a thread that was just deleted and returns 404.
+      if (result.type !== 'redirect' && id && id === threadId) {
+        await goto('/assistant', { invalidateAll: true });
+        return;
+      }
       await update();
     };
   };
+  $effect(() => {
+    const id = editingId;
+    if (!id) return;
+    void tick().then(() => {
+      const input = document.getElementById(`thread-title-${id}`);
+      if (input instanceof HTMLInputElement) {
+        input.focus();
+        input.select();
+      }
+    });
+  });
   let transcript: HTMLDivElement;
   let controller: AbortController | undefined;
   $effect(() => {
@@ -237,7 +269,11 @@
           {:else if confirmId === thread.id}
             <div class="thread-confirm">
               <span>Удалить чат?</span>
-              <form method="POST" action="?/delete" use:enhance={deleteThread}>
+              <form
+                method="POST"
+                action={data.threadId ? `?thread=${data.threadId}&/delete` : '?/delete'}
+                use:enhance={deleteThread}
+              >
                 <input type="hidden" name="threadId" value={thread.id} />
                 <button class="thread-action danger" aria-label="Удалить чат"
                   ><Icon name="trash" size={14} /></button

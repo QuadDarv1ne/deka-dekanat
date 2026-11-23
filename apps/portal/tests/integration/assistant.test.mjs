@@ -294,47 +294,46 @@ test('Rename and delete chat with owner verification', async () => {
   assert.equal(threads.rowCount, 1);
   assert.equal(threads.rows[0].title, 'Проверка переименования');
 
+  const rename = (values, cookie) =>
+    fetch(origin + '/assistant?/rename', {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        Origin: origin,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(cookie ? { cookie } : {})
+      },
+      body: new URLSearchParams(values)
+    });
+  const remove = (values, cookie) =>
+    fetch(origin + '/assistant?/delete', {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        Origin: origin,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(cookie ? { cookie } : {})
+      },
+      body: new URLSearchParams(values)
+    });
+
+  // Empty and oversized titles are rejected before touching the database
+  assert.equal((await rename({ threadId, title: '   ' }, student)).status, 400);
+  assert.equal((await rename({ threadId, title: 'х'.repeat(101) }, student)).status, 400);
+
   // Rename the chat
-  const renameResp = await fetch(origin + '/assistant?/rename', {
-    method: 'POST',
-    redirect: 'manual',
-    headers: {
-      Origin: origin,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      cookie: student
-    },
-    body: new URLSearchParams({ threadId, title: 'Мой переименованный чат' })
-  });
-  assert.equal(renameResp.status, 303);
+  assert.equal((await rename({ threadId, title: 'Мой переименованный чат' }, student)).status, 200);
   threads = await db.query('SELECT title FROM assistant_threads WHERE id=$1', [threadId]);
   assert.equal(threads.rows[0].title, 'Мой переименованный чат');
 
-  // Another user cannot rename the chat
-  const badRename = await fetch(origin + '/assistant?/rename', {
-    method: 'POST',
-    redirect: 'manual',
-    headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded', cookie: other },
-    body: new URLSearchParams({ threadId, title: 'Чужое название' })
-  });
-  assert.equal(badRename.status, 404);
+  // Another user cannot rename or delete the chat
+  assert.equal((await rename({ threadId, title: 'Чужое название' }, other)).status, 404);
+  assert.equal((await remove({ threadId }, other)).status, 404);
   threads = await db.query('SELECT title FROM assistant_threads WHERE id=$1', [threadId]);
   assert.equal(threads.rows[0].title, 'Мой переименованный чат');
 
-  // Another user cannot delete the chat
-  const badDelete = await fetch(origin + '/assistant?/delete', {
-    method: 'POST',
-    redirect: 'manual',
-    headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded', cookie: other },
-    body: new URLSearchParams({ threadId })
-  });
-  assert.equal(badDelete.status, 404);
-  let count = await db.query('SELECT count(*)::int c FROM assistant_threads WHERE id=$1', [
-    threadId
-  ]);
-  assert.equal(count.rows[0].c, 1);
-
-  // Delete the chat
-  const deleteResp = await fetch(origin + '/assistant?/delete', {
+  // Deleting the currently open chat redirects to a fresh chat
+  const deleted = await fetch(origin + '/assistant?thread=' + threadId + '&/delete', {
     method: 'POST',
     redirect: 'manual',
     headers: {
@@ -344,7 +343,16 @@ test('Rename and delete chat with owner verification', async () => {
     },
     body: new URLSearchParams({ threadId })
   });
-  assert.equal(deleteResp.status, 303);
-  count = await db.query('SELECT count(*)::int c FROM assistant_threads WHERE id=$1', [threadId]);
-  assert.equal(count.rows[0].c, 0);
+  assert.equal(deleted.status, 303);
+  assert.equal(new URL(deleted.headers.get('location'), origin).pathname, '/assistant');
+  assert.equal(
+    (await db.query('SELECT count(*)::int c FROM assistant_threads WHERE id=$1', [threadId]))
+      .rows[0].c,
+    0
+  );
+  assert.equal(
+    (await db.query('SELECT count(*)::int c FROM assistant_messages WHERE thread_id=$1', [threadId]))
+      .rows[0].c,
+    0
+  );
 });
