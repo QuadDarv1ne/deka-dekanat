@@ -1,0 +1,51 @@
+# fly.toml app configuration file generated for deka-dekanat on 2026-11-22T22:07:11+03:00
+#
+# See https://docs.fly.io/reference/configuration for information about how to use this file.
+#
+
+app = 'deka-dekanat'
+primary_region = 'fra'
+
+[build]
+  dockerfile = 'infrastructure/docker/Dockerfile.fly'
+
+[env]
+  DEMO_MODE = 'true'
+  HOST = '0.0.0.0'
+  NODE_ENV = 'production'
+  PORT = '5180'
+
+[[mounts]]
+  source = "deka_pgdata"
+  destination = "/data"
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 5180
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [services.concurrency]
+    type = 'requests'
+    hard_limit = 25
+    soft_limit = 20
+
+  [[services.http_checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '1m0s'
+    method = 'get'
+    path = '/health'
+    protocol = 'http'
+    tls_skip_verify = false
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '512mb'

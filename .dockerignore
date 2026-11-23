@@ -26,3 +26,16 @@ next-env.d.ts
 docs
 test
 *.zip
+
+# SvelteKit (apps/portal) — артефакты и зависимости не должны попадать в
+# build-context Dockerfile.paas / Dockerfile.fly (контекст = корень репозитория).
+# Иначе локальные node_modules (двоичники Windows) раздувают контекст и ломают npm ci.
+apps/portal/node_modules
+**/.svelte-kit
+**/.output
+**/.turbo
+
+# локальные данные установки и вспомогательные директории
+var
+new
+apps/portal/tests

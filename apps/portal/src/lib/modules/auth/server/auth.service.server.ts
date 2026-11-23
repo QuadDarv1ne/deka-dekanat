@@ -10,7 +10,24 @@ const cookieName = 'deka_session';
 const duration = 60 * 60 * 12;
 
 export function isLocalDemo(url: URL) {
-  return process.env.DEMO_MODE === 'true' && ['127.0.0.1', 'localhost'].includes(url.hostname);
+  // DEMO_MODE=true enables the demo seed accounts (@deka.test emails) and the
+  // quick sign-in buttons. The original code restricted this to localhost only;
+  // we extend it to also accept the public deployment hosts (Z.ai sandbox, Fly.io,
+  // Railway, Render, any other PaaS) so the demo can be evaluated through the
+  // public preview URL.
+  // Setting DEMO_ALLOW_ANY_HOST=true removes the hostname check entirely.
+  if (process.env.DEMO_MODE !== 'true') return false;
+  if (process.env.DEMO_ALLOW_ANY_HOST === 'true') return true;
+  const host = url.hostname;
+  return (
+    host === '127.0.0.1' ||
+    host === 'localhost' ||
+    host.endsWith('.space-z.ai') ||
+    host.endsWith('.fly.dev') ||
+    host.endsWith('.up.railway.app') ||
+    host.endsWith('.onrender.com') ||
+    host.endsWith('.localhost')
+  );
 }
 
 export async function sessionUser(cookies: Cookies, url: URL): Promise<User | null> {

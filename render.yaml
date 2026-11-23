@@ -1,0 +1,67 @@
+# Render Blueprint for Дека (deka-dekanat v2.0).
+#
+# Deploys two services:
+#   1. A managed PostgreSQL database (free for 30 days, then $7/mo).
+#   2. A web service running our SvelteKit app, which connects to the DB via
+#      DATABASE_URL that Render injects automatically.
+#
+# Usage:
+#   1. Push this repo to GitHub.
+#   2. Go to https://dashboard.render.com → New → Blueprint.
+#   3. Pick your GitHub repo. Render will read render.yaml and create both
+#      services automatically.
+#   4. The first deploy takes ~5 minutes (Docker build + migrations + seed).
+#
+# Or via CLI:
+#   render blueprint apply --repo <github-url>
+#
+# After deploy:
+#   - Web service URL: https://deka-dekanat.onrender.com
+#   - Database: available in Render dashboard under "deka-db"
+#
+# Environment variables that Render sets automatically:
+#   - DATABASE_URL (from the deka-db database service)
+#
+# Environment variables you should set in the Render dashboard (or via CLI):
+#   - DEMO_MODE=true (enables demo accounts + quick sign-in buttons)
+#   - AI_BASE_URL (leave empty — AI assistant is disabled)
+#   - AI_MODEL     (leave empty)
+#
+# Test accounts (when DEMO_MODE=true):
+#   student@deka.test / Deka2026!
+#   dean@deka.test / Deka2026!
+#   teacher@deka.test / Deka2026!
+#   admin@deka.test / Deka2026!
+
+databases:
+  - name: deka-db
+    databaseName: deka
+    ipAllowList: []
+    plan: free  # 30 days free, then $7/mo
+
+services:
+  - type: web
+    name: deka-dekanat
+    runtime: docker
+    dockerfilePath: ./infrastructure/docker/Dockerfile.paas
+    dockerContext: .
+    plan: free  # Free web service (sleeps after 15 min inactivity)
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deka-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 5180
+      - key: DEMO_MODE
+        value: "true"
+      - key: AI_BASE_URL
+        value: ""
+      - key: AI_MODEL
+        value: ""

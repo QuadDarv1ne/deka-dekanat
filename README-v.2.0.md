@@ -235,6 +235,65 @@ AI_MODEL=deka-assistant
 
 ## Развёртывание
 
+### Fly.io (рекомендуемый публичный деплой)
+
+В репозитории уже есть `Dockerfile.fly` (комбинированный образ PostgreSQL 17 + Node 22) и `fly.toml`. После регистрации на [fly.io](https://fly.io) установите `flyctl` и выполните:
+
+```bash
+# 1. Авторизуйтесь
+fly auth login
+
+# 2. Создайте приложение (fly.toml уже в репозитории — не позволяйте flyctl его перезаписывать)
+fly launch --no-deploy
+
+# 3. Создайте persistent volume для базы данных (1 ГБ достаточно для демо)
+fly volumes create deka_pgdata --size 1
+
+# 4. Задайте секреты (сгенерируйте свои пароли)
+fly secrets set POSTGRES_PASSWORD="$(openssl rand -hex 24)" \
+                  APP_DB_PASSWORD="$(openssl rand -hex 24)" \
+                  DEMO_MODE=true
+
+# 5. Задеплойте
+fly deploy
+
+# 6. Откройте приложение
+fly open
+```
+
+На Windows `openssl` может отсутствовать — пароли можно сгенерировать иначе, например
+`node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"`.
+
+После деплоя приложение доступно по адресу `https://deka-dekanat.fly.dev/` (имя зависит от того, что выбрали при `fly launch`). Все миграции и наполнение демо-данными выполняются автоматически при первом старте контейнера.
+
+**Особенности конфигурации:**
+- Образ объединяет PostgreSQL 17 и SvelteKit-приложение в одном контейнере (упрощает деплой на Fly.io free tier)
+- Persistent volume монтируется в `/data`, кластер PostgreSQL лежит в `/data/postgres` — это хранит данные между перезапусками. Подкаталог нужен потому, что Fly отдаёт volume с каталогом `lost+found`, в который `initdb` отказывается инициализироваться
+- ИИ-ассистент отключён (для него нужен GPU и 1.5 ГБ модель — не влезает в free tier)
+- `vite.config.ts` без хардкода origin — приложение работает за любым reverse proxy
+
+### Railway
+
+Railway автоматически создаёт managed PostgreSQL и прокидывает `DATABASE_URL` в приложение. Образ `Dockerfile.paas` не включает PostgreSQL — он подключается к внешней БД.
+
+1. Запушьте форк репозитория на GitHub
+2. На [railway.com](https://railway.com) → New Project → Deploy from GitHub repo
+3. Railway увидит `railway.json` и автоматически использует `Dockerfile.paas`
+4. Добавьте PostgreSQL plugin (New → Database → PostgreSQL) — Railway сама подставит `DATABASE_URL`
+5. В Variables задайте `DEMO_MODE=true`
+6. Railway сам задеплоит за ~3 минуты, URL будет вида `deka-dekanat.up.railway.app`
+
+### Render
+
+Render создаёт и PostgreSQL, и web service из `render.yaml` Blueprint одной командой.
+
+1. Запушьте форк репозитория на GitHub
+2. На [dashboard.render.com](https://dashboard.render.com) → New → Blueprint
+3. Выберите ваш GitHub репозиторий — Render увидит `render.yaml` и создаст оба сервиса
+4. Бесплатный план: web service засыпает через 15 минут неактивности, БД бесплатна 30 дней
+5. URL будет вида `deka-dekanat.onrender.com`
+
+
 ### Windows
 
 Нужен PowerShell 7, Node.js 26.13 или совместимое исправление ветки 26, PostgreSQL 18. По умолчанию локальный PostgreSQL слушает порт 55438, приложение — порт 5180. Пути к бинарным файлам хранятся в `var/config/runtime.json`, параметры приложения в `var/config/application.env`.
