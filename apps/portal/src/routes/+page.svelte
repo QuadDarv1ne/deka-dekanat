@@ -7,7 +7,7 @@
   import LoginView from '#modules/auth/ui/LoginView.svelte';
   import type { PageProps } from './$types';
 
-  let { data }: PageProps = $props();
+  let { data, form }: PageProps = $props();
 
   onMount(() => {
     if (data.redirect) void goto(data.redirect, { replaceState: true });
@@ -17,7 +17,7 @@
 {#if data.redirect}
   <div class="redirecting">Входим в личный кабинет…</div>
 {:else}
-  <LoginView data={{ demo: data.demo, accounts: data.accounts }} form={null} />
+  <LoginView data={{ demo: data.demo, accounts: data.accounts }} form={form ?? null} />
 {/if}
 
 <style>
