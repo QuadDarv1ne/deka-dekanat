@@ -384,3 +384,15 @@ Dockerfile, docker-compose.yml, docker-compose.ollama.yml, DEPLOY.md,
 | `campus` | Поэтажная схема, сопоставление аудиторий и маршруты по графу |
 
 **Подробнее:** [Архитектура](docs/architecture.md) · [Развёртывание](docs/deployment.md) · [Сверка со старым проектом](docs/feature-audit.md)
+
+### Лицензия
+
+[© DEKA DEKANAT - RESTRICTED USE LICENSE](./LICENSE)
+
+License version 1.0
+
+Copyright (c) 2025-2026 Dupley Maxim Igorevich and Maestro7IT. All rights reserved.
+
+This Software is not open source. This License grants a limited right
+to view and use the Software. All rights not expressly granted are
+reserved by the Author.
