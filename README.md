@@ -269,7 +269,15 @@ Dockerfile, docker-compose.yml, docker-compose.ollama.yml, DEPLOY.md,
 
 ## Лицензия
 
-[CC BY-SA 4.0](./LICENSE) — свободное использование с указанием авторства и распространением на тех же условиях. Все данные в демо-версии вымышленные.
+[© DEKA DEKANAT - RESTRICTED USE LICENSE](./LICENSE)
+
+License version 1.0
+
+Copyright (c) 2025-2026 Dupley Maxim Igorevich and Maestro7IT. All rights reserved.
+
+This Software is not open source. This License grants a limited right
+to view and use the Software. All rights not expressly granted are
+reserved by the Author.
 
 ## ИИ в разработке
 
