@@ -52,7 +52,9 @@ export async function generateStudyAdvice(
       AbortSignal.any([signal, AbortSignal.timeout(75_000)])
     )) {
       output += chunk;
-      if (output.length > 3000) return { status: 'unavailable' } as const;
+      // Small models often spend the first tokens on a reasoning block. The
+      // parser keeps only the JSON array, but a runaway reply still has to stop.
+      if (output.length > 8000) return { status: 'unavailable' } as const;
     }
     const advice = parseStudyAdvice(output, focus);
     return advice ? ({ status: 'ok', advice } as const) : ({ status: 'unavailable' } as const);

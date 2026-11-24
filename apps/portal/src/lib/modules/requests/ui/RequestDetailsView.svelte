@@ -22,6 +22,9 @@
   };
   let { data, form }: PageProps = $props();
   let pending = $state(false);
+  let note = $state('');
+  let noteError = $state('');
+  let armed = $state<RequestStatus | null>(null);
   const transitions: RequestStatus[] = ['in_progress', 'ready', 'done', 'rejected', 'cancelled'];
   const allowed = $derived(
     transitions.filter((s) => canTransition(data.user.role, data.request.status, s))
@@ -92,9 +95,13 @@
           class="form-grid"
           use:enhance={() => {
             pending = true;
-            return async ({ update }) => {
-              await update();
+            return async ({ result, update }) => {
+              await update({ reset: result.type !== 'failure' });
               pending = false;
+              if (result.type !== 'failure') {
+                note = '';
+                armed = null;
+              }
             };
           }}
         >
@@ -105,9 +112,15 @@
           />{#if data.user.role === 'dean'}<label
               >Комментарий студенту<textarea
                 name="note"
+                bind:value={note}
                 placeholder="Укажите срок, место получения или причину отклонения."
                 maxlength="2000"></textarea></label
-            >{/if}{#if form?.message && form.operation !== 'message'}<p
+            >
+            <p class="muted small">
+              Для отклонения нужна причина, минимум 5 символов.
+            </p>{/if}{#if noteError}<p class="form-error" role="alert">
+              {noteError}
+            </p>{/if}{#if form?.message && form.operation !== 'message'}<p
               class:form-success={form.success}
               class:form-error={!form.success}
               role="status"
@@ -121,7 +134,25 @@
                 name="status"
                 value={status}
                 disabled={pending}
-                >{actionNames[status]}<Icon
+                onclick={(event) => {
+                  if (status === 'rejected' && note.trim().length < 5) {
+                    event.preventDefault();
+                    noteError = 'Укажите причину отклонения (минимум 5 символов).';
+                    armed = null;
+                    return;
+                  }
+                  noteError = '';
+                  if (status !== 'rejected' && status !== 'cancelled') return;
+                  if (armed !== status) {
+                    event.preventDefault();
+                    armed = status;
+                  }
+                }}
+                >{armed === status
+                  ? status === 'rejected'
+                    ? 'Подтвердить отклонение'
+                    : 'Подтвердить отмену'
+                  : actionNames[status]}<Icon
                   name={['rejected', 'cancelled'].includes(status) ? 'x' : 'check'}
                   size={15}
                 /></button

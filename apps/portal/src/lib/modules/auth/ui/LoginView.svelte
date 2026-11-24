@@ -5,6 +5,7 @@
   type PageProps = {
     data: {
       demo: boolean;
+      unavailable?: boolean;
       accounts: ReadonlyArray<(typeof import('../preview-accounts.ts').previewAccounts)[number]>;
     };
     form?: { message?: string } | null;
@@ -22,15 +23,19 @@
   <section class="welcome">
     <a class="brand" href="/" aria-label="Дека"><Brand /></a>
     <div class="welcome-body">
-    <h2>Ваш личный кабинет</h2>
-    <p>Расписание, оценки и обращения в деканат.</p>
-    <img src="/img/v2.0/login.jpg" alt="Дека" class="login-illustration" />
-  </div>
+      <h2>Ваш личный кабинет</h2>
+      <p>Расписание, оценки и обращения в деканат.</p>
+      <img src="/img/v2.0/login.jpg" alt="Дека" class="login-illustration" />
+    </div>
   </section>
   <main class="login-main">
     <div class="login-form">
       <h1>Вход в Деку</h1>
-      {#if form?.message}<p class="form-error" role="alert">{form.message}</p>{/if}
+      {#if form?.message}<p class="form-error" role="alert">
+          {form.message}
+        </p>{:else if data.unavailable}<p class="form-error" role="alert">
+          Сервис временно недоступен. Попробуйте ещё раз через минуту.
+        </p>{/if}
       <form
         method="POST"
         use:enhance={() => {

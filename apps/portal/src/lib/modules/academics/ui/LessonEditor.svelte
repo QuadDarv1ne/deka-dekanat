@@ -26,6 +26,9 @@
 <section class="panel">
   <div class="panel-head">
     <h2>{selected ? 'Изменить занятие' : 'Новое занятие'}</h2>
+    {#if selected?.cancelled_at}<p class="muted small">
+        Занятие сейчас отменено. Сохранение вернёт его в расписание и отправит уведомление группе.
+      </p>{/if}
     {#if selected}<button class="text-link" onclick={onreset}>Отменить редактирование</button>{/if}
   </div>
   {#key selected?.id ?? 'new'}<form
@@ -67,6 +70,7 @@
         ><label
           >Начало, МСК<input
             type="time"
+            step="60"
             name="start"
             required
             value={selected ? time(selected.starts_at) : '09:00'}
@@ -74,6 +78,7 @@
         ><label
           >Окончание, МСК<input
             type="time"
+            step="60"
             name="end"
             required
             value={selected ? time(selected.ends_at) : '10:30'}

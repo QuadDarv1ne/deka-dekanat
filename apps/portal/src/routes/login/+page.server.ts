@@ -9,7 +9,8 @@ export const load = (({ locals, url }) => {
   const demo = isLocalDemo(url);
   return {
     demo,
-    accounts: demo ? previewAccounts : []
+    accounts: demo ? previewAccounts : [],
+    unavailable: locals.database === 'unavailable'
   };
 }) satisfies PageServerLoad;
 

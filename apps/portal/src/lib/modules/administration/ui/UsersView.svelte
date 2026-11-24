@@ -2,13 +2,12 @@
   import Icon from '#shared/ui/Icon.svelte';
   import { initials } from '#shared/formatting.ts';
   import { roleNames } from '#modules/auth/auth.labels.ts';
+  import { folded } from '#shared/text-fold.ts';
   type PageProps = { data: { users: import('../administration.types').AccountSummary[] } };
   let { data }: PageProps = $props();
   let search = $state('');
   const users = $derived(
-    data.users.filter((u) =>
-      `${u.full_name} ${u.email}`.toLowerCase().includes(search.toLowerCase())
-    )
+    data.users.filter((u) => folded(`${u.full_name} ${u.email}`).includes(folded(search.trim())))
   );
 </script>
 

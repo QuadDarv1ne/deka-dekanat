@@ -5,7 +5,7 @@ import {
   publishAnnouncement,
   removeAnnouncement
 } from '#modules/announcements/server/announcement.service.server.ts';
-import { fail, isHttpError, redirect } from '@sveltejs/kit';
+import { fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import type { Actions } from './$types';
 export const load = (async ({ locals }) => ({
@@ -23,10 +23,16 @@ export const actions = {
     redirect(303, '/announcements');
   },
   remove: async ({ locals, request }) => {
-    await removeAnnouncement(
-      requireRole(locals.user, 'dean'),
-      String((await request.formData()).get('id') ?? '')
-    );
+    try {
+      await removeAnnouncement(
+        requireRole(locals.user, 'dean'),
+        String((await request.formData()).get('id') ?? '')
+      );
+    } catch (cause) {
+      if (isRedirect(cause)) throw cause;
+      if (isHttpError(cause)) return fail(cause.status, { message: cause.body.message });
+      throw cause;
+    }
     redirect(303, '/announcements');
   }
 } satisfies Actions;

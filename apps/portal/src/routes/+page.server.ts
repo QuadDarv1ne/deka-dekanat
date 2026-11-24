@@ -13,7 +13,8 @@ export const load = ({ locals, url }: import('./$types').PageServerLoadEvent) =>
   return {
     redirect: locals.user ? '/overview' : null,
     demo,
-    accounts: demo ? previewAccounts : []
+    accounts: demo ? previewAccounts : [],
+    unavailable: locals.database === 'unavailable'
   };
 };
 

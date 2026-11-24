@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, isHttpError } from '@sveltejs/kit';
 import { transaction } from '#server/database/postgres.ts';
 import type { User } from '#modules/auth/auth.types.ts';
 import {
@@ -24,6 +24,14 @@ import {
 import { isUuid } from '#shared/validation.ts';
 
 const norm = (s: string) => s.trim().toLocaleLowerCase('ru-RU').replaceAll('ё', 'е');
+function readRow<T>(index: number, read: () => T): T {
+  try {
+    return read();
+  } catch (cause) {
+    if (isHttpError(cause)) error(cause.status, `Строка ${index}: ${cause.body.message}`);
+    throw cause;
+  }
+}
 export const importHeaders = {
   schedule: [
     'Группа',
@@ -87,16 +95,16 @@ export async function prepareAcademicImport(user: User, kind: ImportKind, file: 
         start: values['Начало'],
         end: values['Окончание'],
         room: values['Аудитория'],
-        kind: kinds[norm(values['Тип'])] ?? '',
+        kind: kinds[norm(values['Тип']).replace(/[.]+$/u, '')] ?? '',
         note: values['Комментарий'] ?? ''
       }))
         form.set(key, value);
-      parsed = lessonValues(form);
+      parsed = readRow(index, () => lessonValues(form));
     } else {
       form.set('student', student!.id);
       form.set('points', values['Баллы']);
       form.set('version', '0');
-      parsed = gradeValues(form);
+      parsed = readRow(index, () => gradeValues(form));
     }
     const key =
       kind === 'schedule'

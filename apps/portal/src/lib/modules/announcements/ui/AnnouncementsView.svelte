@@ -10,6 +10,8 @@
     form?: { message?: string } | null;
   };
   let { data, form }: PageProps = $props();
+  let publishing = $state(false);
+  let removeId = $state<string | null>(null);
 </script>
 
 <svelte:head><title>Объявления · Дека</title></svelte:head>
@@ -24,7 +26,18 @@
   {#if data.user.role === 'dean'}<section class="panel">
       <h2>Опубликовать объявление</h2>
       {#if form?.message}<p class="form-error" role="alert">{form.message}</p>{/if}
-      <form method="POST" action="?/publish" class="form-grid publish-form" use:enhance>
+      <form
+        method="POST"
+        action="?/publish"
+        class="form-grid publish-form"
+        use:enhance={() => {
+          publishing = true;
+          return async ({ result, update }) => {
+            await update({ reset: result.type !== 'failure' });
+            publishing = false;
+          };
+        }}
+      >
         <input type="hidden" name="id" value={data.publicationId} /><label
           >Заголовок<input name="title" minlength="3" maxlength="160" required /></label
         ><label
@@ -36,9 +49,9 @@
           ></textarea></label
         >
         <div class="row wrap">
-          <button class="btn">Опубликовать</button><span class="muted small"
-            >Студенты и преподаватели получат уведомление.</span
-          >
+          <button class="btn" disabled={publishing}
+            >{publishing ? 'Публикуем…' : 'Опубликовать'}</button
+          ><span class="muted small">Студенты и преподаватели получат уведомление.</span>
         </div>
       </form>
     </section>{/if}
@@ -61,8 +74,14 @@
           action="?/remove"
           use:enhance
         >
-          <input type="hidden" name="id" value={item.id} /><button class="text-link"
-            >Удалить объявление</button
+          <input type="hidden" name="id" value={item.id} /><button
+            class="text-link"
+            onclick={(event) => {
+              if (removeId !== item.id) {
+                event.preventDefault();
+                removeId = item.id;
+              }
+            }}>{removeId === item.id ? 'Подтвердить удаление' : 'Удалить объявление'}</button
           >
         </form>{/if}
     </article>{:else}<div class="panel empty">

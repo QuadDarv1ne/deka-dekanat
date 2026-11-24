@@ -121,6 +121,15 @@ test('Teaching permissions, conflict checks, stale edits, cancellation and notif
         .rows[0].count
     ) >= 6
   );
+  const schedulePage = await (await get('/schedule', dean)).text();
+  assert.match(schedulePage, /Проверка-101/);
+  assert.match(schedulePage, /Отменено/);
+  const calendar = await (await get('/schedule/calendar', dean)).text();
+  const event = calendar.split('BEGIN:VEVENT').find((part) => part.includes(lesson.id));
+  assert.ok(event);
+  assert.match(event, /STATUS:CANCELLED/);
+  assert.match(event, /Отменено: /);
+  assert.doesNotMatch(await (await get('/overview', dean)).text(), /Проверка-101/);
   assert.equal(
     (
       await post(

@@ -13,6 +13,7 @@
       messages: ChatMessage[];
       threadId: string | null;
       available: boolean;
+      modelStatus?: 'ready' | 'loading' | 'offline';
       question?: string;
     };
   } = $props();
@@ -105,6 +106,13 @@
     }
   });
   $effect(() => () => controller?.abort());
+  $effect(() => {
+    if (data.available || data.modelStatus === 'ready') return;
+    const timer = setInterval(() => {
+      if (!untrack(() => pending)) void invalidateAll();
+    }, 8000);
+    return () => clearInterval(timer);
+  });
   const suggestions = [
     'Как получить справку об обучении?',
     'Какие у меня ближайшие занятия?',
@@ -171,7 +179,12 @@
           buffer = lines.pop() ?? '';
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue;
-            const event = JSON.parse(line.slice(6)) as ChatEvent;
+            let event: ChatEvent;
+            try {
+              event = JSON.parse(line.slice(6)) as ChatEvent;
+            } catch {
+              continue;
+            }
             if (event.type === 'meta') threadId = event.threadId;
             if (event.type === 'delta')
               items = items.map((m) =>
@@ -220,9 +233,15 @@
     <p>Вопросы об учёбе и личном кабинете.</p>
   </div>
   <span class="pill" class:green={data.available}
-    ><span class="availability" class:online={data.available}></span>{data.available
+    ><span
+      class="availability"
+      class:online={data.available}
+      class:loading={data.modelStatus === 'loading'}
+    ></span>{data.available
       ? 'На связи'
-      : 'Нет подключения'}</span
+      : data.modelStatus === 'loading'
+        ? 'Запускается'
+        : 'Нет подключения'}</span
   >
 </div>
 <div class="assistant-workspace">
@@ -385,9 +404,12 @@
         void send();
       }}
     >
-      {#if error}<p class="chat-error" role="alert">{error}</p>{/if}{#if !data.available}<p
-          class="chat-error"
+      {#if error}<p class="chat-error" role="alert">{error}</p>{/if}{#if data.modelStatus === 'loading'}<p
+          class="chat-notice"
         >
+          Помощник загружает модель. Первый ответ может занять около минуты. Вопросы о текущем
+          времени отвечают сразу.
+        </p>{:else if !data.available}<p class="chat-error">
           Помощник временно недоступен. Вопросы о текущем времени работают.
         </p>{/if}
       <div class="composer-field">
@@ -820,6 +842,11 @@
     color: #ad5d70;
     margin-bottom: 12px;
   }
+  .chat-notice {
+    font-size: 12px;
+    color: #8a6a32;
+    margin-bottom: 12px;
+  }
   .availability {
     width: 5px;
     height: 5px;
@@ -828,6 +855,9 @@
   }
   .availability.online {
     background: #78a289;
+  }
+  .availability.loading {
+    background: #c4a15a;
   }
   @keyframes pulse {
     0%,

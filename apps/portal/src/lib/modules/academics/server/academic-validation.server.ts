@@ -1,9 +1,17 @@
 import { error } from '@sveltejs/kit';
+import { calendarDate } from '#shared/calendar-date.ts';
 import { isUuid } from '#shared/validation.ts';
 import type { GradeInput, LessonInput } from '../academic-management.types.ts';
 const fail = (message: string): never => {
   throw error(400, message);
 };
+function clock(value: string) {
+  const match = /^(\d{1,2}):([0-5]\d)(?::[0-5]\d)?$/.exec(value.trim());
+  if (!match) return null;
+  const hour = Number(match[1]);
+  if (hour > 23) return null;
+  return `${String(hour).padStart(2, '0')}:${match[2]}`;
+}
 export function assignmentValues(value: string) {
   const [teacher_id, subject_id, group_id, ...rest] = value.split('.');
   if (rest.length || ![teacher_id, subject_id, group_id].every((id) => id && isUuid(id)))
@@ -12,14 +20,10 @@ export function assignmentValues(value: string) {
 }
 export function lessonValues(form: FormData): LessonInput {
   const assignment = assignmentValues(String(form.get('assignment') ?? ''));
-  const date = String(form.get('date') ?? ''),
-    start = String(form.get('start') ?? ''),
-    end = String(form.get('end') ?? '');
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-    ![start, end].every((t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t))
-  )
-    fail('Проверьте дату и время занятия.');
+  const date = calendarDate(String(form.get('date') ?? '')),
+    start = clock(String(form.get('start') ?? '')),
+    end = clock(String(form.get('end') ?? ''));
+  if (!date || !start || !end) fail('Проверьте дату и время занятия.');
   const starts_at = new Date(`${date}T${start}:00+03:00`),
     ends_at = new Date(`${date}T${end}:00+03:00`);
   if (
@@ -56,11 +60,13 @@ export function lessonValues(form: FormData): LessonInput {
 export function gradeValues(form: FormData): GradeInput {
   const assignment = assignmentValues(String(form.get('assignment') ?? ''));
   const student_id = String(form.get('student') ?? ''),
-    raw = String(form.get('points') ?? '').trim(),
+    raw = String(form.get('points') ?? '')
+      .trim()
+      .replace(',', '.'),
     points = Number(raw);
   if (
     !isUuid(student_id) ||
-    !/^\d{1,3}$/.test(raw) ||
+    !/^\d{1,3}(?:\.0+)?$/.test(raw) ||
     !Number.isInteger(points) ||
     points < 0 ||
     points > 100

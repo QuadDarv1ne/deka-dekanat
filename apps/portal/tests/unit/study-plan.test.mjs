@@ -53,6 +53,16 @@ test('AI output must contain one bounded plain-text step per supplied item', () 
     1: first.step,
     2: second.step
   });
+  assert.deepEqual(
+    parseStudyAdvice(
+      JSON.stringify([
+        { id: '2', step: second.step },
+        { id: '1', step: first.step }
+      ]),
+      focus
+    ),
+    { 1: first.step, 2: second.step }
+  );
   for (const invalid of [
     [first],
     [first, first],
@@ -63,4 +73,21 @@ test('AI output must contain one bounded plain-text step per supplied item', () 
   ])
     assert.equal(parseStudyAdvice(JSON.stringify(invalid), focus), null);
   assert.equal(parseStudyAdvice('Обычный текст вместо JSON', focus), null);
+  assert.deepEqual(
+    parseStudyAdvice(
+      '<think>черновик</think>\nРекомендации:\n' + JSON.stringify([first, second]),
+      focus
+    ),
+    { 1: first.step, 2: second.step }
+  );
+  assert.equal(
+    parseStudyAdvice(
+      JSON.stringify([
+        { id: 1, step: 'Решите задачу по теме «семинар» — без конспекта.' },
+        second
+      ]),
+      focus
+    )?.[1],
+    'Решите задачу по теме "семинар": без конспекта.'
+  );
 });

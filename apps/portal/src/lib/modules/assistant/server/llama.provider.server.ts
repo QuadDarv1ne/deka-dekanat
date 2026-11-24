@@ -18,19 +18,22 @@ function authHeader(): Record<string, string> {
   const key = process.env.AI_API_KEY;
   return key ? { Authorization: `Bearer ${key}` } : {};
 }
-export async function modelAvailable() {
+export type ModelStatus = 'ready' | 'loading' | 'offline';
+export async function modelStatus(): Promise<ModelStatus> {
   try {
-    // llama-server answers 503 while it is still loading the model, so a false
-    // result here means "not ready yet", not necessarily "broken".
-    return (
-      await fetch(new URL('../health', baseUrl() + '/'), {
-        signal: AbortSignal.timeout(1500),
-        redirect: 'error',
-        headers: authHeader()
-      })
-    ).ok;
+    // llama-server answers 503 while the weights are still loading. That is not
+    // the same as a dead process: the chat request waits and retries.
+    const response = await fetch(new URL('../health', baseUrl() + '/'), {
+      signal: AbortSignal.timeout(1500),
+      redirect: 'error',
+      headers: authHeader()
+    });
+    await response.body?.cancel().catch(() => {});
+    if (response.ok) return 'ready';
+    if (response.status === 503) return 'loading';
+    return 'offline';
   } catch {
-    return false;
+    return 'offline';
   }
 }
 const MODEL_LOAD_TIMEOUT = 150000;
@@ -90,7 +93,12 @@ export async function* generate(
         if (!line.startsWith('data:')) continue;
         const data = line.slice(5).trim();
         if (!data || data === '[DONE]') continue;
-        const parsed = JSON.parse(data);
+        let parsed: { error?: unknown; choices?: { delta?: { content?: unknown } }[] };
+        try {
+          parsed = JSON.parse(data);
+        } catch {
+          throw new Error('MODEL_STREAM');
+        }
         if (parsed.error) throw new Error('MODEL_ERROR');
         const content = parsed.choices?.[0]?.delta?.content;
         if (typeof content === 'string' && content) yield content;

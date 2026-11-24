@@ -12,7 +12,10 @@
   let search = $state('');
   const filtered = $derived(
     data.grades.filter((g) =>
-      `${g.subject} ${g.student}`.toLowerCase().includes(search.trim().toLowerCase())
+      `${g.subject} ${g.student} ${g.teacher}`
+        .toLocaleLowerCase('ru-RU')
+        .replaceAll('ё', 'е')
+        .includes(search.trim().toLocaleLowerCase('ru-RU').replaceAll('ё', 'е'))
     )
   );
   const average = $derived(

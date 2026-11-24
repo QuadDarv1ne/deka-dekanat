@@ -63,11 +63,19 @@ export function fallbackAdvice(item: FocusItem): string {
   return 'Решите одну задачу по последней теме без подсказок и разберите ошибки.';
 }
 
+function advicePayload(raw: string) {
+  const outside = raw.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  const source = outside.includes('[') ? outside : raw;
+  const start = source.indexOf('[');
+  const end = source.lastIndexOf(']');
+  if (start === -1 || end < start) return source.trim();
+  return source.slice(start, end + 1);
+}
+
 export function parseStudyAdvice(raw: string, focus: FocusItem[]): StudyAdvice | null {
-  const json = raw.trim().replace(/^```(?:json)?\s*\n([\s\S]*?)\n```$/i, '$1');
   let input: unknown;
   try {
-    input = JSON.parse(json);
+    input = JSON.parse(advicePayload(raw));
   } catch {
     return null;
   }
@@ -75,15 +83,27 @@ export function parseStudyAdvice(raw: string, focus: FocusItem[]): StudyAdvice |
   const expected = new Set(focus.map((item) => item.key));
   const advice: StudyAdvice = {};
   for (const row of input) {
+    const id =
+      row && typeof row === 'object' && 'id' in row
+        ? typeof row.id === 'number'
+          ? row.id
+          : typeof row.id === 'string' && /^\d{1,4}$/.test(row.id)
+            ? Number(row.id)
+            : null
+        : null;
     if (
       !row ||
-      !Number.isInteger(row.id) ||
-      !expected.delete(row.id) ||
+      id === null ||
+      !Number.isInteger(id) ||
+      !expected.delete(id) ||
       typeof row.step !== 'string'
     ) {
       return null;
     }
-    const text = row.step.trim();
+    const text = row.step
+      .replace(/[«»]/g, '"')
+      .replace(/\s*—\s*/g, ': ')
+      .trim();
     if (
       text.length < 12 ||
       text.length > 240 ||
@@ -91,7 +111,7 @@ export function parseStudyAdvice(raw: string, focus: FocusItem[]): StudyAdvice |
     ) {
       return null;
     }
-    advice[row.id] = text;
+    advice[id] = text;
   }
   return advice;
 }

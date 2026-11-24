@@ -6,22 +6,24 @@ import {
   renameThread,
   deleteThread
 } from '#modules/assistant/server/assistant.repository.server.ts';
-import { modelAvailable } from '#modules/assistant/server/llama.provider.server.ts';
+import { modelStatus } from '#modules/assistant/server/llama.provider.server.ts';
 import { isUuid } from '#shared/validation.ts';
 import type { Actions, PageServerLoad } from './$types';
 export const load = (async ({ locals, url }) => {
   const user = requireUser(locals.user),
-    threadId = url.searchParams.get('thread');
-  const [history, items, available] = await Promise.all([
+    requested = url.searchParams.get('thread'),
+    threadId = requested && isUuid(requested) ? requested : null;
+  const [history, items, status] = await Promise.all([
     threads(user.id),
     threadId ? messages(user.id, threadId) : Promise.resolve([]),
-    modelAvailable()
+    modelStatus()
   ]);
   return {
     threads: history,
     messages: items,
     threadId,
-    available,
+    available: status === 'ready',
+    modelStatus: status,
     question: (url.searchParams.get('question') ?? '').slice(0, 2000)
   };
 }) satisfies PageServerLoad;

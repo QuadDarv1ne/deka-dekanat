@@ -19,20 +19,20 @@ export async function cabinetSection(user: User, section: CabinetSection) {
       return {
         view: 'news' as const,
         news,
-        alerts: alerts
-          .slice(0, 15)
-          .map(({ id, title, body, read_at, created_at }) => ({
-            id,
-            title,
-            body,
-            read_at,
-            created_at
-          }))
+        alerts: alerts.slice(0, 15).map(({ id, title, body, read_at, created_at }) => ({
+          id,
+          title,
+          body,
+          read_at,
+          created_at
+        }))
       };
     }
     case 'schedule':
     case 'sport': {
-      const agenda = (await lessons(user)).filter((item) => Date.parse(item.ends_at) > Date.now());
+      const agenda = (await lessons(user)).filter(
+        (item) => !item.cancelled_at && Date.parse(item.ends_at) > Date.now()
+      );
       return {
         view: 'schedule' as const,
         lessons:
@@ -72,15 +72,13 @@ export async function cabinetSection(user: User, section: CabinetSection) {
       const items = await listRequests(user);
       return {
         view: 'applications' as const,
-        requests: items
-          .slice(0, 20)
-          .map(({ id, number, kind, status, updated_at }) => ({
-            id,
-            number,
-            kind,
-            status,
-            updated_at
-          }))
+        requests: items.slice(0, 20).map(({ id, number, kind, status, updated_at }) => ({
+          id,
+          number,
+          kind,
+          status,
+          updated_at
+        }))
       };
     }
     default: {
