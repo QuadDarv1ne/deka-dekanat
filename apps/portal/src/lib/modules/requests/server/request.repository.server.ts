@@ -28,7 +28,8 @@ export async function getRequest(user: User, id: string) {
   if (!result.rowCount) error(404, 'Заявление не найдено.');
   return result.rows[0];
 }
-export async function requestEvents(requestId: string) {
+export async function requestEvents(user: User, requestId: string) {
+  const access = scope(user);
   return (
     await query<{
       id: string;
@@ -37,8 +38,8 @@ export async function requestEvents(requestId: string) {
       created_at: string;
       actor: string;
     }>(
-      `SELECT e.id,e.status,e.note,e.created_at,u.full_name actor FROM request_events e JOIN users u ON u.id=e.actor_id WHERE request_id=$1 ORDER BY e.created_at,e.id`,
-      [requestId]
+      `SELECT e.id,e.status,e.note,e.created_at,u.full_name actor FROM request_events e JOIN users u ON u.id=e.actor_id JOIN requests r ON r.id=e.request_id WHERE e.request_id=$2 AND ${access.sql} ORDER BY e.created_at,e.id`,
+      [access.value, requestId]
     )
   ).rows;
 }

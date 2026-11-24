@@ -77,7 +77,9 @@ export async function transitionRequest(
     const code =
       target === 'ready' && canIssueDocument(request.kind) ? newToken() : request.verification_code;
     await db.query(
-      `UPDATE requests SET status=$2,staff_note=$3,version=version+1,updated_at=now(),verification_code=$4,
+      `UPDATE requests SET status=$2,
+      staff_note=CASE WHEN $5 THEN $3 ELSE staff_note END,
+      version=version+1,updated_at=now(),verification_code=$4,
       assigned_to=CASE WHEN $5 THEN $6 ELSE assigned_to END WHERE id=$1`,
       [id, target, note, code, user.role === 'dean', user.id]
     );

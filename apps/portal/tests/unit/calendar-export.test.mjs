@@ -20,6 +20,7 @@ test('Calendar export marks a cancelled lesson and keeps an active one confirmed
   const active = calendarExport([lesson], new Date('2026-11-24T09:00:00.000Z'));
   assert.match(active, /SUMMARY:Базы данных/);
   assert.match(active, /STATUS:CONFIRMED/);
+  assert.match(active, /SEQUENCE:0/);
   assert.match(active, /BEGIN:VALARM\r\nTRIGGER:-PT15M\r\nACTION:DISPLAY/);
   assert.doesNotMatch(active, /STATUS:CANCELLED/);
   const cancelled = calendarExport(
@@ -28,6 +29,17 @@ test('Calendar export marks a cancelled lesson and keeps an active one confirmed
   );
   assert.match(cancelled, /SUMMARY:Отменено: Базы данных/);
   assert.match(cancelled, /STATUS:CANCELLED/);
+  // RFC 5545: отмена требует ненулевого SEQUENCE, иначе подписчик может
+  // не обновить ранее импортированное событие.
+  assert.match(cancelled, /SEQUENCE:1/);
   assert.doesNotMatch(cancelled, /BEGIN:VALARM/);
   for (const line of cancelled.split('\r\n')) assert.ok(Buffer.byteLength(line) <= 75);
+});
+
+test('Cancelled lesson sequence follows the stored version', () => {
+  const cancelled = calendarExport(
+    [{ ...lesson, version: 3, cancelled_at: '2026-11-24T08:00:00.000Z' }],
+    new Date('2026-11-24T09:00:00.000Z')
+  );
+  assert.match(cancelled, /SEQUENCE:4/);
 });

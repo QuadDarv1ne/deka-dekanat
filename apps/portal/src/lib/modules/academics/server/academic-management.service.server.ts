@@ -99,7 +99,7 @@ export async function saveGradeInTransaction(
   user: User,
   row: GradeInput,
   source: 'manual' | 'import' = 'manual'
-) {
+): Promise<boolean> {
   await checkAssignment(db, user, row);
   const student = await db.query(
     "SELECT 1 FROM users WHERE id=$1 AND group_id=$2 AND role='student' AND active FOR SHARE",
@@ -114,7 +114,9 @@ export async function saveGradeInTransaction(
   ).rows[0];
   if ((previous?.version ?? 0) !== row.version)
     error(409, 'Результат уже изменён. Обновите данные перед сохранением.');
-  if (previous?.points === row.points && previous.teacher_id === row.teacher_id) return;
+  // Совпадение баллов и преподавателя — запись не меняется: истории, аудита и
+  // уведомления нет. Возвращаем false, чтобы импорт не учитывал такую строку в счётчике.
+  if (previous?.points === row.points && previous.teacher_id === row.teacher_id) return false;
   const saved = await db.query<{ version: number }>(
     `INSERT INTO grades(student_id,subject_id,teacher_id,points,updated_by) VALUES($1,$2,$3,$4,$5)
      ON CONFLICT(student_id,subject_id) DO UPDATE SET teacher_id=EXCLUDED.teacher_id,
@@ -154,6 +156,7 @@ export async function saveGradeInTransaction(
       })
     ]
   );
+  return true;
 }
 export async function saveLesson(user: User, row: LessonInput) {
   return transaction(async (db) => {

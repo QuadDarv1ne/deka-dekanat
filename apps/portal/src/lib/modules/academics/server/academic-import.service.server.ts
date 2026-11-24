@@ -192,18 +192,29 @@ export async function confirmAcademicImport(user: User, id: string) {
     const draft = result.rows[0];
     if (draft.completed_at) return draft.kind as ImportKind;
     if (draft.expired) error(409, 'Время подтверждения истекло. Загрузите файл снова.');
-    for (const row of draft.rows) {
-      if (draft.kind === 'schedule') await saveLessonInTransaction(db, user, row);
-      else {
-        if (!Number.isSafeInteger(row.version) || row.version < 0)
-          error(409, 'Предпросмотр устарел. Загрузите файл снова.');
-        await saveGradeInTransaction(db, user, row, 'import');
+    let written = 0;
+    for (const [position, row] of draft.rows.entries()) {
+      // Позиция соответствует нумерации prepare-этапа: заголовок — строка 1,
+      // первая запись — строка 2. Пустые строки были отброшены до сохранения черновика.
+      const rowLabel = `Строка ${position + 2}: `;
+      try {
+        if (draft.kind === 'schedule') {
+          await saveLessonInTransaction(db, user, row);
+          written += 1;
+        } else {
+          if (!Number.isSafeInteger(row.version) || row.version < 0)
+            error(409, 'Предпросмотр устарел. Загрузите файл снова.');
+          if (await saveGradeInTransaction(db, user, row, 'import')) written += 1;
+        }
+      } catch (cause) {
+        if (isHttpError(cause)) error(cause.status, `${rowLabel}${cause.body.message}`);
+        throw cause;
       }
     }
     await db.query('UPDATE academic_imports SET completed_at=now() WHERE id=$1', [id]);
     await db.query(
       "INSERT INTO audit_log(actor_id,action,entity_id,metadata) VALUES($1,'academic_import.complete',$2,$3)",
-      [user.id, id, JSON.stringify({ kind: draft.kind, count: draft.rows.length })]
+      [user.id, id, JSON.stringify({ kind: draft.kind, count: written })]
     );
     return draft.kind as ImportKind;
   });

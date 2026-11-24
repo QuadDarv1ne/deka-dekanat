@@ -44,27 +44,32 @@ export function calendarExport(
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
       'X-WR-CALNAME:Дека. Расписание',
-      ...lessons.flatMap((l) => [
-        'BEGIN:VEVENT',
-        `UID:${l.id}@deka`,
-        `DTSTAMP:${stamp(now.toISOString())}`,
-        `DTSTART:${stamp(l.starts_at)}`,
-        `DTEND:${stamp(l.ends_at)}`,
-        `SUMMARY:${escape(l.cancelled_at ? 'Отменено: ' + l.subject : l.subject)}`,
-        `LOCATION:${escape(l.room)}`,
-        `STATUS:${l.cancelled_at ? 'CANCELLED' : 'CONFIRMED'}`,
-        `DESCRIPTION:${escape(`${l.group_name}. ${l.teacher}${l.note ? '\n' + l.note : ''}`)}`,
-        ...(l.cancelled_at || !alarm
-          ? []
-          : [
-              'BEGIN:VALARM',
-              `TRIGGER:${alarm.before}`,
-              'ACTION:DISPLAY',
-              `DESCRIPTION:${escape(alarm.description)}`,
-              'END:VALARM'
-            ]),
-        'END:VEVENT'
-      ]),
+      ...lessons.flatMap((l) => {
+        const baseSequence = (l.version != null ? l.version : 0) + 1;
+        const sequence = l.cancelled_at ? baseSequence : 0;
+        return [
+          'BEGIN:VEVENT',
+          `UID:${l.id}@deka`,
+          `DTSTAMP:${stamp(now.toISOString())}`,
+          `DTSTART:${stamp(l.starts_at)}`,
+          `DTEND:${stamp(l.ends_at)}`,
+          `SUMMARY:${escape(l.cancelled_at ? 'Отменено: ' + l.subject : l.subject)}`,
+          `LOCATION:${escape(l.room)}`,
+          `SEQUENCE:${sequence}`,
+          `STATUS:${l.cancelled_at ? 'CANCELLED' : 'CONFIRMED'}`,
+          `DESCRIPTION:${escape(`${l.group_name}. ${l.teacher}${l.note ? '\n' + l.note : ''}`)}`,
+          ...(l.cancelled_at || !alarm
+            ? []
+            : [
+                'BEGIN:VALARM',
+                `TRIGGER:${alarm.before}`,
+                'ACTION:DISPLAY',
+                `DESCRIPTION:${escape(alarm.description)}`,
+                'END:VALARM'
+              ]),
+          'END:VEVENT'
+        ];
+      }),
       'END:VCALENDAR'
     ]
       .map(fold)

@@ -10,6 +10,7 @@ export interface Lesson {
   kind: 'lecture' | 'practice' | 'lab' | 'exam' | 'credit';
   note: string;
   cancelled_at: string | null;
+  version?: number;
 }
 export interface Grade {
   student_id: string;

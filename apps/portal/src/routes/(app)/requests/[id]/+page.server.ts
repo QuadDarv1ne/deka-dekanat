@@ -12,7 +12,7 @@ export const load = (async ({ locals, params }) => {
   const user = requireRole(locals.user, 'student', 'dean');
   const request = await getRequest(user, params.id);
   const [events, conversation] = await Promise.all([
-    requestEvents(request.id),
+    requestEvents(user, request.id),
     requestMessages(user, request.id)
   ]);
   return { request, events, conversation, submissionId: crypto.randomUUID() };
