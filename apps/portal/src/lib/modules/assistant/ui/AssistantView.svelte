@@ -298,13 +298,13 @@
               <button
                 type="button"
                 class="thread-action"
-                aria-label={`Переименовать чат «${thread.title}»`}
+                aria-label={`Переименовать чат "${thread.title}"`}
                 onclick={() => startRename(thread)}><Icon name="pencil" size={14} /></button
               >
               <button
                 type="button"
                 class="thread-action danger"
-                aria-label={`Удалить чат «${thread.title}»`}
+                aria-label={`Удалить чат "${thread.title}"`}
                 onclick={() => startDelete(thread)}><Icon name="trash" size={14} /></button
               >
             </div>

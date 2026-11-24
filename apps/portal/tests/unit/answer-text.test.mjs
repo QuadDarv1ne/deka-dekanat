@@ -8,7 +8,7 @@ test('Streamed em dashes stay a prefix of the saved answer', () => {
   const deltas = [];
   for (let index = 1; index <= raw.length; index++) {
     const visible = visibleAnswer(raw.slice(0, index));
-    assert.ok(visible.startsWith(sent), `shrank at ${index}: «${visible}» after «${sent}»`);
+    assert.ok(visible.startsWith(sent), `shrank at ${index}: "${visible}" after "${sent}"`);
     deltas.push(visible.slice(sent.length));
     sent = visible;
   }

@@ -51,7 +51,7 @@ export async function prepareAcademicImport(user: User, kind: ImportKind, file: 
   const keys = new Set<string>();
   for (const { index, values } of table) {
     for (const header of importHeaders[kind].filter((h) => h !== 'Комментарий'))
-      if (!(header in values)) error(400, `Отсутствует столбец «${header}». Скачайте шаблон.`);
+      if (!(header in values)) error(400, `Отсутствует столбец "${header}". Скачайте шаблон.`);
     const student =
       kind === 'grades' ? students.find((s) => norm(s.email) === norm(values['Почта'])) : null;
     if (kind === 'grades' && !student)

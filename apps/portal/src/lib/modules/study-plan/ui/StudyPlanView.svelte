@@ -53,7 +53,7 @@
       <strong>{data.assessments.length}</strong><span>Аттестаций впереди</span>
     </div>
     <div class="metric">
-      <strong>{ready} из {data.assessments.length}</strong><span>Отмечено «Готов»</span>
+      <strong>{ready} из {data.assessments.length}</strong><span>Отмечено "Готов"</span>
     </div>
     <div class="metric">
       <strong>{below} из {data.grades.length}</strong><span>Дисциплин ниже {PASSING_SCORE}</span>
@@ -126,7 +126,7 @@
         <div>
           <h2 id="scores-title">Текущие баллы</h2>
           <p>
-            По данным раздела «Успеваемость». Порог пересдачи в шкале Деки составляет {PASSING_SCORE}
+            По данным раздела "Успеваемость". Порог пересдачи в шкале Деки составляет {PASSING_SCORE}
             баллов.
           </p>
         </div>

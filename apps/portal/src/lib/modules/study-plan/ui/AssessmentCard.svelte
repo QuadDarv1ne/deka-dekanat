@@ -39,7 +39,7 @@
       value={item.marked_ready ? 'no' : 'yes'}
       disabled={pending}
     >
-      {item.marked_ready ? 'Готов · Снять отметку' : 'Отметить «Готов»'}
+      {item.marked_ready ? 'Готов · Снять отметку' : 'Отметить "Готов"'}
     </button>
   </form>
   <form method="POST" action="?/preference" use:enhance={save} class="reminder">

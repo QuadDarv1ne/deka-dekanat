@@ -43,7 +43,7 @@
   <p>{data.request.details}</p>
   {#if data.request.staff_note}<p>{data.request.staff_note}</p>{/if}
   <div class="document-sign">
-    <span>Подготовлено деканатом</span><span>Электронный реестр «Дека»</span>
+    <span>Подготовлено деканатом</span><span>Электронный реестр "Дека"</span>
   </div>
   <footer>
     <img
