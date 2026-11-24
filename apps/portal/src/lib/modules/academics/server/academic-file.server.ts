@@ -1,6 +1,7 @@
 import { parse } from 'csv-parse/sync';
 import { Worker } from 'node:worker_threads';
 import { error } from '@sveltejs/kit';
+import { dateFromExcel } from '#shared/calendar-date.ts';
 
 async function excelRows(buffer: Buffer): Promise<unknown[][]> {
   // Parse uploaded archives outside the HTTP worker, with bounded memory and execution time.
@@ -76,7 +77,7 @@ export async function readAcademicFile(file: File) {
             : Math.round(value * 1440) % 1440;
         return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
       }
-      return value instanceof Date ? value.toISOString().slice(0, 10) : String(value ?? '').trim();
+      return value instanceof Date ? dateFromExcel(value) : String(value ?? '').trim();
     })
   );
   const headers = rows.shift()!;

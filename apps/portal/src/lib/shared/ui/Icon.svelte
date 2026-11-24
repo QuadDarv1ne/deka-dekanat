@@ -35,7 +35,9 @@
     MapPin,
     Route,
     ArrowLeftRight,
-    Copy
+    Copy,
+    Pencil,
+    Trash
   } from '@lucide/svelte';
   const icons = {
     home: LayoutDashboard,
@@ -73,7 +75,9 @@
     pin: MapPin,
     route: Route,
     swap: ArrowLeftRight,
-    copy: Copy
+    copy: Copy,
+    pencil: Pencil,
+    trash: Trash
   };
   let { name, size = 20 }: { name: keyof typeof icons; size?: number } = $props();
   const Current = $derived(icons[name]);

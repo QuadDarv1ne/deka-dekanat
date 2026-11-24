@@ -33,6 +33,7 @@
     form?: { message?: string } | null;
   } = $props();
   let selected: ManagedLesson | null = $state(null);
+  let cancelId = $state<string | null>(null);
   function edit(lesson: ManagedLesson) {
     selected = lesson;
     document
@@ -99,14 +100,22 @@
                   >{lesson.room}{#if lesson.cancelled_at}<small>Отменено</small>{/if}</td
                 ><td
                   ><div class="row wrap">
-                    <button class="text-link" onclick={() => edit(lesson)}
-                      >{lesson.cancelled_at ? 'Восстановить' : 'Изменить'}</button
+                    <button class="text-link" type="button" onclick={() => edit(lesson)}
+                      >Изменить</button
                     >{#if !lesson.cancelled_at}<form method="POST" action="?/cancel" use:enhance>
                         <input type="hidden" name="id" value={lesson.id} /><input
                           type="hidden"
                           name="version"
                           value={lesson.version}
-                        /><button class="text-link cancel">Отменить</button>
+                        /><button
+                          class="text-link cancel"
+                          onclick={(event) => {
+                            if (cancelId !== lesson.id) {
+                              event.preventDefault();
+                              cancelId = lesson.id;
+                            }
+                          }}>{cancelId === lesson.id ? 'Подтвердить отмену' : 'Отменить'}</button
+                        >
                       </form>{/if}
                   </div></td
                 ></tr

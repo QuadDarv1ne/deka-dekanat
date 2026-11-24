@@ -16,7 +16,9 @@ export async function getOverview(user: User) {
     user.role === 'admin' ? systemStats() : Promise.resolve(null)
   ]);
   return {
-    schedule: schedule.filter((l) => new Date(l.ends_at).getTime() > Date.now()).slice(0, 3),
+    schedule: schedule
+      .filter((l) => !l.cancelled_at && new Date(l.ends_at).getTime() > Date.now())
+      .slice(0, 3),
     grades: results,
     news: news.slice(0, 3),
     requests: requests.slice(0, 4),

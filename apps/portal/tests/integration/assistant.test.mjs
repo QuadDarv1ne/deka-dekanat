@@ -245,3 +245,114 @@ test('Direct student questions use exact schedule, attendance and document facts
   }
   assert.equal(await captured(), before);
 });
+
+test('A question about active requests is answered from the database, not invented by the model', async () => {
+  const before = (await (await fetch(process.env.TEST_MODEL_ORIGIN + '/__requests')).json()).length;
+  const response = await send(student, {
+    messageId: randomUUID(),
+    message: 'Сколько у меня активных заявлений?'
+  });
+  assert.equal(response.status, 200);
+  const events = (await response.text())
+    .split('\n')
+    .filter((line) => line.startsWith('data: '))
+    .map((line) => JSON.parse(line.slice(6)));
+  assert.equal(events.at(-1).type, 'done');
+  const answer = events
+    .filter((event) => event.type === 'delta')
+    .map((event) => event.text)
+    .join('');
+  const active = await db.query(
+    "SELECT count(*)::int count FROM requests WHERE student_id='00000000-0000-4000-8000-000000000010' AND status IN ('new','in_progress','ready')"
+  );
+  assert.match(answer, new RegExp(`Активных заявлений: ${active.rows[0].count}`));
+  assert.doesNotMatch(answer, /час|дн[яей]|недел/);
+  assert.deepEqual(
+    events.at(-1).sources.map((item) => item.id),
+    ['requests']
+  );
+  assert.equal(
+    (await (await fetch(process.env.TEST_MODEL_ORIGIN + '/__requests')).json()).length,
+    before
+  );
+});
+
+test('Rename and delete chat with owner verification', async () => {
+  // Create a chat by sending a message
+  const id = randomUUID(),
+    response = await send(student, { messageId: id, message: 'Проверка переименования' });
+  assert.equal(response.status, 200);
+  const events = (await response.text())
+    .split('\n')
+    .filter((l) => l.startsWith('data: '))
+    .map((l) => JSON.parse(l.slice(6)));
+  const threadId = events[0].threadId;
+  assert.ok(threadId);
+
+  // Verify initial title (first 80 chars of message)
+  let threads = await db.query('SELECT id,title FROM assistant_threads WHERE id=$1', [threadId]);
+  assert.equal(threads.rowCount, 1);
+  assert.equal(threads.rows[0].title, 'Проверка переименования');
+
+  const rename = (values, cookie) =>
+    fetch(origin + '/assistant?/rename', {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        Origin: origin,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(cookie ? { cookie } : {})
+      },
+      body: new URLSearchParams(values)
+    });
+  const remove = (values, cookie) =>
+    fetch(origin + '/assistant?/delete', {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        Origin: origin,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(cookie ? { cookie } : {})
+      },
+      body: new URLSearchParams(values)
+    });
+
+  // Empty and oversized titles are rejected before touching the database
+  assert.equal((await rename({ threadId, title: '   ' }, student)).status, 400);
+  assert.equal((await rename({ threadId, title: 'х'.repeat(101) }, student)).status, 400);
+
+  // Rename the chat
+  assert.equal((await rename({ threadId, title: 'Мой переименованный чат' }, student)).status, 200);
+  threads = await db.query('SELECT title FROM assistant_threads WHERE id=$1', [threadId]);
+  assert.equal(threads.rows[0].title, 'Мой переименованный чат');
+
+  // Another user cannot rename or delete the chat
+  assert.equal((await rename({ threadId, title: 'Чужое название' }, other)).status, 404);
+  assert.equal((await remove({ threadId }, other)).status, 404);
+  threads = await db.query('SELECT title FROM assistant_threads WHERE id=$1', [threadId]);
+  assert.equal(threads.rows[0].title, 'Мой переименованный чат');
+
+  // Deleting the currently open chat redirects to a fresh chat
+  const deleted = await fetch(origin + '/assistant?thread=' + threadId + '&/delete', {
+    method: 'POST',
+    redirect: 'manual',
+    headers: {
+      Origin: origin,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      cookie: student
+    },
+    body: new URLSearchParams({ threadId })
+  });
+  assert.equal(deleted.status, 303);
+  assert.equal(new URL(deleted.headers.get('location'), origin).pathname, '/assistant');
+  assert.equal(
+    (await db.query('SELECT count(*)::int c FROM assistant_threads WHERE id=$1', [threadId]))
+      .rows[0].c,
+    0
+  );
+  assert.equal(
+    (await db.query('SELECT count(*)::int c FROM assistant_messages WHERE thread_id=$1', [threadId]))
+      .rows[0].c,
+    0
+  );
+});

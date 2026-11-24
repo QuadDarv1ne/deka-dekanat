@@ -15,6 +15,7 @@
     };
     form: { saved?: boolean; message?: string } | null;
   } = $props();
+  let saving = $state<string[]>([]);
 </script>
 
 <div class="page-head">
@@ -29,7 +30,11 @@
     <form method="GET" class="lesson-picker">
       <label
         >Занятие
-        <select name="lesson" value={journal.selected.id}>
+        <select
+          name="lesson"
+          value={journal.selected.id}
+          onchange={(event) => (event.currentTarget as HTMLSelectElement).form?.requestSubmit()}
+        >
           {#each journal.lessons as lesson (lesson.id)}
             <option value={lesson.id}
               >{shortDate(lesson.starts_at)}, {time(lesson.starts_at)} · {lesson.subject} · {lesson.group_name}</option
@@ -46,7 +51,23 @@
       <ul>
         {#each journal.roster as student (student.id)}
           <li>
-            <form method="POST" use:enhance>
+            <form
+              method="POST"
+              use:enhance={({ cancel }) => {
+                if (saving.includes(student.id)) {
+                  cancel();
+                  return;
+                }
+                saving = [...saving, student.id];
+                return async ({ update }) => {
+                  try {
+                    await update({ reset: false });
+                  } finally {
+                    saving = saving.filter((id) => id !== student.id);
+                  }
+                };
+              }}
+            >
               <input type="hidden" name="lesson" value={journal.selected.id} />
               <input type="hidden" name="student" value={student.id} />
               <input type="hidden" name="version" value={student.version} />
@@ -62,8 +83,11 @@
                   <option {value}>{label}</option>
                 {/each}
               </select>
-              <button class="btn secondary" aria-describedby={'attendance-' + student.id}
-                >Сохранить</button
+              <button
+                class="btn secondary"
+                aria-describedby={'attendance-' + student.id}
+                disabled={saving.includes(student.id)}
+                >{saving.includes(student.id) ? 'Сохраняем…' : 'Сохранить'}</button
               >
             </form>
           </li>

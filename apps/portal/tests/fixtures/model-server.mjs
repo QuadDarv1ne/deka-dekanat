@@ -28,7 +28,7 @@ export async function startModelFixture() {
         'data: ' +
           JSON.stringify({
             choices: [
-              { delta: { content: '«Мои заявления». Выберите тип справки и отправьте заявление.' } }
+              { delta: { content: '"Мои заявления". Выберите тип справки и отправьте заявление.' } }
             ]
           }) +
           '\n\n'

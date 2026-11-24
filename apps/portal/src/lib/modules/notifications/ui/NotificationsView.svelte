@@ -4,6 +4,7 @@
   import { shortDate, time } from '#shared/formatting.ts';
   type PageProps = { data: { notifications: import('../notification.types').Notification[] } };
   let { data }: PageProps = $props();
+  let pending = $state(false);
 </script>
 
 <svelte:head><title>Уведомления · Дека</title></svelte:head>
@@ -12,8 +13,23 @@
     <h1>Уведомления</h1>
     <p>Следите за обновлениями и ответами деканата.</p>
   </div>
-  {#if data.notifications.some((n) => !n.read_at)}<form action="?/read" method="POST" use:enhance>
-      <button class="btn outline"><Icon name="check" size={16} />Прочитать все</button>
+  {#if data.notifications.some((n) => !n.read_at)}<form
+      action="?/read"
+      method="POST"
+      use:enhance={() => {
+        pending = true;
+        return async ({ update }) => {
+          try {
+            await update();
+          } finally {
+            pending = false;
+          }
+        };
+      }}
+    >
+      <button class="btn outline" disabled={pending}
+        ><Icon name="check" size={16} />{pending ? 'Отмечаем…' : 'Прочитать все'}</button
+      >
     </form>{/if}
 </div>
 <section class="panel">

@@ -25,7 +25,7 @@
         <span class="marker warm"><Icon name="calendar" size={17} /></span><a
           href={'/assistant/study-plan#assessment-' + urgent.id}
           ><strong>{urgent.subject}</strong><span
-            >Аттестация {shortDate(urgent.starts_at)}. Откройте план подготовки.</span
+            >Аттестация {shortDate(urgent.starts_at)} Откройте план подготовки.</span
           ></a
         >
       </li>{/if}

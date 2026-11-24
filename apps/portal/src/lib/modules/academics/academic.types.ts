@@ -9,6 +9,7 @@ export interface Lesson {
   room: string;
   kind: 'lecture' | 'practice' | 'lab' | 'exam' | 'credit';
   note: string;
+  cancelled_at: string | null;
 }
 export interface Grade {
   student_id: string;

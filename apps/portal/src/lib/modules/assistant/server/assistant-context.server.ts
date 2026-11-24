@@ -5,7 +5,7 @@ import { announcements } from '#modules/announcements/server/announcement.reposi
 import { listRequests } from '#modules/requests/server/request.repository.server.ts';
 import { studentAttendance } from '#modules/academics/server/attendance.repository.server.ts';
 import { studyAssessments } from '#modules/study-plan/server/study-plan.repository.server.ts';
-import { contextSections } from '../context-selection.policy.ts';
+import { contextSections, lessonKindsForQuestion } from '../context-selection.policy.ts';
 import { learningReferences } from '../learning-references.ts';
 import { attendanceLabels } from '#modules/academics/attendance.labels.ts';
 import { countAttendance } from '#modules/academics/student-progress.policy.ts';
@@ -55,19 +55,18 @@ export async function assistantContext(
   }
   if (selected.has('help')) {
     context.help =
-      'Справку об обучении, о стипендии или для налоговой можно запросить в «Моих заявлениях». Выберите тип и укажите цель. Срок подготовки уточняется в деканате. Официальный документ требует подписи вуза.';
+      'Справку об обучении, о стипендии или для налоговой можно запросить в "Моих заявлениях". Выберите тип и укажите цель. Срок подготовки уточняется в деканате. Официальный документ требует подписи вуза.';
     sources.push({ id: 'help', title: 'Подача заявления', href: '/requests/templates' });
   }
   if (selected.has('schedule')) {
+    const kinds = lessonKindsForQuestion(question, previousQuestions);
     add(
       'schedule',
       'Расписание',
       '/schedule',
       schedule
-        .filter((l) => new Date(l.ends_at) > new Date())
-        .filter(
-          (l) => !/экзам|зач[её]т|аттестаци/iu.test(question) || ['exam', 'credit'].includes(l.kind)
-        )
+        .filter((l) => !l.cancelled_at && new Date(l.ends_at) > new Date())
+        .filter((l) => !kinds || (kinds as readonly string[]).includes(l.kind))
         .slice(0, 6)
         .map((l) => ({
           subject: l.subject,
@@ -122,13 +121,11 @@ export async function assistantContext(
       'attendance',
       'Посещаемость',
       '/schedule/attendance',
-      attendance
-        .slice(0, 8)
-        .map((a) => ({
-          subject: a.subject,
-          date: fullDate(a.starts_at),
-          status: attendanceLabels[a.status ?? 'unmarked']
-        }))
+      attendance.slice(0, 8).map((a) => ({
+        subject: a.subject,
+        date: fullDate(a.starts_at),
+        status: attendanceLabels[a.status ?? 'unmarked']
+      }))
     );
   }
   if (personal && selected.has('preparation'))
@@ -136,14 +133,12 @@ export async function assistantContext(
       'preparation',
       'План подготовки',
       '/assistant/study-plan',
-      preparation
-        .slice(0, 4)
-        .map((a) => ({
-          subject: a.subject,
-          kind: a.kind,
-          date: fullDate(a.starts_at),
-          markedReady: a.marked_ready
-        }))
+      preparation.slice(0, 4).map((a) => ({
+        subject: a.subject,
+        kind: a.kind,
+        date: fullDate(a.starts_at),
+        markedReady: a.marked_ready
+      }))
     );
   const references = learningReferences(question);
   if (references.length) {

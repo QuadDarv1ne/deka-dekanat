@@ -20,10 +20,28 @@
       : (days.find((day) => day >= data.today) ?? days.at(-1) ?? '')
   );
   const displayed = $derived(data.lessons.filter((l) => dayKey(l.starts_at) === selectedDay));
+  const pairNumbers = $derived.by(() => {
+    const numbers = new Map<string, number>();
+    let pair = 0;
+    for (const lesson of displayed) if (!lesson.cancelled_at) numbers.set(lesson.id, ++pair);
+    return numbers;
+  });
+  const activeCount = $derived(displayed.filter((lesson) => !lesson.cancelled_at).length);
   const dayName = (value: string) =>
     new Intl.DateTimeFormat('ru-RU', { weekday: 'short', timeZone: 'Europe/Moscow' }).format(
       new Date(value + 'T12:00:00+03:00')
     );
+  function revealDay(node: HTMLButtonElement, active: boolean) {
+    const place = (chosen: boolean) => {
+      if (!chosen) return;
+      const scroller = node.parentElement;
+      if (!scroller) return;
+      const left = node.offsetLeft - (scroller.clientWidth - node.offsetWidth) / 2;
+      scroller.scrollLeft = Math.max(0, left);
+    };
+    place(active);
+    return { update: place };
+  }
   const dateName = (value: string) =>
     new Intl.DateTimeFormat('ru-RU', {
       day: 'numeric',
@@ -62,6 +80,8 @@
     </div>
     <div class="days">
       {#each days as day (day)}<button
+          type="button"
+          use:revealDay={selectedDay === day}
           class:chosen={selectedDay === day}
           aria-pressed={selectedDay === day}
           aria-label={dateName(day)}
@@ -79,15 +99,20 @@
   {#if selectedDay}<section class="panel">
       <div class="panel-head">
         <h2 class="day-heading">{dayName(selectedDay)}, {dateName(selectedDay)}</h2>
-        <span class="pill">Занятий: {displayed.length}</span>
+        <span class="pill">Занятий: {activeCount}</span>
+        {#if displayed.length > activeCount}<span class="pill"
+            >Отменено: {displayed.length - activeCount}</span
+          >{/if}
       </div>
       <div class="lessons">
         {#each displayed as lesson, i (lesson.id)}
-          {@const route = roomMapHref(lesson.room, displayed[i - 1]?.room)}
-          <article class="lesson">
+          {@const cancelled = !!lesson.cancelled_at}
+          {@const previousRoom = displayed.slice(0, i).findLast((item) => !item.cancelled_at)?.room}
+          {@const route = cancelled ? null : roomMapHref(lesson.room, previousRoom)}
+          <article class="lesson" class:cancelled>
             <div class="times">
               <strong>{time(lesson.starts_at)}</strong><span>{time(lesson.ends_at)}</span><small
-                >{i + 1} пара</small
+                >{cancelled ? 'Отменено' : `${pairNumbers.get(lesson.id)} пара`}</small
               >
             </div>
             <div class="lesson-card {lesson.color}">
@@ -206,6 +231,23 @@
     border-color: #e1ece5;
     border-left-color: #9cbfa9;
     background: #fbfefc;
+  }
+  .lesson.cancelled .lesson-card {
+    background: #f6f6f8;
+    border-color: #e4e4e8;
+    border-left-color: #b5b5bd;
+  }
+  .lesson.cancelled h3 {
+    color: #6c7078;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+  .lesson.cancelled .times strong,
+  .lesson.cancelled .times span,
+  .lesson.cancelled .lesson-card p,
+  .lesson.cancelled .room,
+  .lesson.cancelled .group {
+    color: #7a7e86;
   }
   .lesson-card h3 {
     font-size: 16px;

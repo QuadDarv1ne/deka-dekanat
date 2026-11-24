@@ -54,9 +54,9 @@
       action="#request-conversation"
       use:enhance={() => {
         pending = true;
-        return async ({ update }) => {
+        return async ({ result, update }) => {
           try {
-            await update();
+            await update({ reset: result.type !== 'failure' });
           } finally {
             pending = false;
           }

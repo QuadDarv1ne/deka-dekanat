@@ -28,7 +28,14 @@ function fold(line: string) {
   }
   return [...lines, current].join('\r\n');
 }
-export function calendarExport(lessons: Lesson[], now = new Date()) {
+export function calendarExport(
+  lessons: Lesson[],
+  now = new Date(),
+  alarm: { before: string; description: string } | null = {
+    before: '-PT15M',
+    description: 'Занятие через 15 минут'
+  }
+) {
   return (
     [
       'BEGIN:VCALENDAR',
@@ -43,9 +50,19 @@ export function calendarExport(lessons: Lesson[], now = new Date()) {
         `DTSTAMP:${stamp(now.toISOString())}`,
         `DTSTART:${stamp(l.starts_at)}`,
         `DTEND:${stamp(l.ends_at)}`,
-        `SUMMARY:${escape(l.subject)}`,
+        `SUMMARY:${escape(l.cancelled_at ? 'Отменено: ' + l.subject : l.subject)}`,
         `LOCATION:${escape(l.room)}`,
+        `STATUS:${l.cancelled_at ? 'CANCELLED' : 'CONFIRMED'}`,
         `DESCRIPTION:${escape(`${l.group_name}. ${l.teacher}${l.note ? '\n' + l.note : ''}`)}`,
+        ...(l.cancelled_at || !alarm
+          ? []
+          : [
+              'BEGIN:VALARM',
+              `TRIGGER:${alarm.before}`,
+              'ACTION:DISPLAY',
+              `DESCRIPTION:${escape(alarm.description)}`,
+              'END:VALARM'
+            ]),
         'END:VEVENT'
       ]),
       'END:VCALENDAR'

@@ -12,7 +12,10 @@
   let search = $state('');
   const filtered = $derived(
     data.grades.filter((g) =>
-      `${g.subject} ${g.student}`.toLowerCase().includes(search.trim().toLowerCase())
+      `${g.subject} ${g.student} ${g.teacher}`
+        .toLocaleLowerCase('ru-RU')
+        .replaceAll('ё', 'е')
+        .includes(search.trim().toLocaleLowerCase('ru-RU').replaceAll('ё', 'е'))
     )
   );
   const average = $derived(
@@ -124,7 +127,7 @@
       </div>{/if}
   </section>
   <div class="note">
-    Шкала оценивания: 85–100 баллов: «отлично», 70–84: «хорошо», 55–69: «удовлетворительно».
+    Шкала оценивания: 85–100 баллов: "отлично", 70–84: "хорошо", 55–69: "удовлетворительно".
   </div>
 </div>
 

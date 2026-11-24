@@ -27,8 +27,11 @@
       use:enhance={() => {
         pending = true;
         return async ({ update }) => {
-          await update({ reset: false });
-          pending = false;
+          try {
+            await update({ reset: false });
+          } finally {
+            pending = false;
+          }
         };
       }}
     >

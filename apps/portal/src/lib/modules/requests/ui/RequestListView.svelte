@@ -11,15 +11,24 @@
   let { data }: PageProps = $props();
   let filter = $state('all');
   let search = $state('');
+  const tabs = [
+    { id: 'all', name: 'Все заявления' },
+    { id: 'active', name: 'Активные' },
+    { id: 'ready', name: 'Готовые' },
+    { id: 'done', name: 'Завершённые' },
+    { id: 'rejected', name: 'Отклонённые' },
+    { id: 'cancelled', name: 'Отменённые' }
+  ];
   const filtered = $derived(
     data.requests.filter(
       (r) =>
         (filter === 'all' ||
           (filter === 'active' && ['new', 'in_progress', 'ready'].includes(r.status)) ||
           filter === r.status) &&
-        `${requestKinds[r.kind]} ${r.number} ${r.student_name}`
-          .toLowerCase()
-          .includes(search.toLowerCase())
+        `${requestKinds[r.kind]} ${r.number} ${r.student_name} ${r.group_name}`
+          .toLocaleLowerCase('ru-RU')
+          .replaceAll('ё', 'е')
+          .includes(search.trim().toLocaleLowerCase('ru-RU').replaceAll('ё', 'е'))
     )
   );
 </script>
@@ -41,7 +50,8 @@
 <section class="panel">
   <div class="toolbar">
     <div class="tabs" aria-label="Фильтр заявлений">
-      {#each [{ id: 'all', name: 'Все заявления' }, { id: 'active', name: 'Активные' }, { id: 'ready', name: 'Готовые' }, { id: 'done', name: 'Завершённые' }] as tab}<button
+      {#each tabs as tab}<button
+          type="button"
           class:chosen={filter === tab.id}
           aria-pressed={filter === tab.id}
           onclick={() => (filter = tab.id)}>{tab.name}</button
@@ -89,7 +99,11 @@
     </div>{:else}<div class="empty">
       <Icon name="inbox" size={32} />
       <h3>Заявлений не найдено</h3>
-      <p>Попробуйте другой фильтр или создайте новое заявление.</p>
+      <p>
+        {filter === 'all' && data.user.role === 'student'
+          ? 'Когда понадобится справка, создайте новое заявление.'
+          : 'В этой папке ничего нет. Выберите другой фильтр.'}
+      </p>
     </div>{/if}
   <p class="results-count">Показано: {filtered.length} из {data.requests.length}</p>
 </section>

@@ -3,9 +3,11 @@ import { lessons } from '#modules/academics/server/academic.repository.server.ts
 import { studentAttendance } from '#modules/academics/server/attendance.repository.server.ts';
 import { countAttendance } from '#modules/academics/student-progress.policy.ts';
 import { readyStudentRequests } from '#modules/requests/server/ready-requests.repository.server.ts';
-import { requestKinds } from '#modules/requests/request.labels.ts';
+import { listRequests } from '#modules/requests/server/request.repository.server.ts';
+import { requestKinds, statusNames } from '#modules/requests/request.labels.ts';
 import { fullDate, time } from '#shared/formatting.ts';
 import type { ChatSource } from '../assistant.types.ts';
+import { cabinetQuestion } from '../cabinet-question.policy.ts';
 
 const schedule = { id: 'schedule', title: 'Расписание', href: '/schedule' };
 
@@ -14,20 +16,18 @@ export async function cabinetFact(
   question: string
 ): Promise<{ text: string; sources: ChatSource[] } | null> {
   if (user.role !== 'student') return null;
-  const text = question
-    .toLocaleLowerCase('ru-RU')
-    .trim()
-    .replace(/[.!?]+$/, '')
-    .trim();
-  const exam =
-    /^(?:когда|во сколько) (?:у меня )?ближайший экзамен(?: и по какой дисциплине)?$/u.test(text);
-  const upcoming = /^какие (?:у меня )?(?:ближайшие|следующие) (?:занятия|пары)(?: у меня)?$/u.test(
-    text
-  );
+  const kind = cabinetQuestion(question);
+  const exam = kind === 'exam';
+  const upcoming = kind === 'upcoming';
   if (exam || upcoming) {
     const now = Date.now();
     const records = (await lessons(user))
-      .filter((lesson) => Date.parse(lesson.ends_at) > now && (!exam || lesson.kind === 'exam'))
+      .filter(
+        (lesson) =>
+          !lesson.cancelled_at &&
+          Date.parse(lesson.ends_at) > now &&
+          (!exam || lesson.kind === 'exam')
+      )
       .slice(0, exam ? 1 : 3);
     if (!records.length)
       return {
@@ -45,7 +45,7 @@ export async function cabinetFact(
       sources: [schedule]
     };
   }
-  if (/^какие (?:мои )?(?:документы|справки) готовы(?: к выдаче)?$/u.test(text)) {
+  if (kind === 'ready') {
     const ready = await readyStudentRequests(user);
     const lines = ready.items.map(
       (item) => `${requestKinds[item.kind]}, заявление №${item.number}.`
@@ -63,7 +63,29 @@ export async function cabinetFact(
       sources: [{ id: 'requests', title: 'Мои заявления', href: '/requests' }]
     };
   }
-  if (/^есть ли у меня пропуски(?: занятий)?$/u.test(text)) {
+  if (kind === 'active') {
+    const active = (await listRequests(user)).filter((item) =>
+      ['new', 'in_progress', 'ready'].includes(item.status)
+    );
+    if (!active.length)
+      return {
+        text: 'Активных заявлений нет.',
+        sources: [{ id: 'requests', title: 'Мои заявления', href: '/requests' }]
+      };
+    return {
+      text: [
+        `Активных заявлений: ${active.length}.`,
+        ...active
+          .slice(0, 4)
+          .map(
+            (item) =>
+              `${requestKinds[item.kind]}, заявление №${item.number}: ${statusNames[item.status]}.`
+          )
+      ].join('\n'),
+      sources: [{ id: 'requests', title: 'Мои заявления', href: '/requests' }]
+    };
+  }
+  if (kind === 'attendance') {
     const counts = countAttendance(await studentAttendance(user));
     return {
       text: `Посещаемость за последние 30 дней. Пропуски: ${counts.absent}. По уважительной причине: ${counts.excused}. Занятий без отметки: ${counts.unmarked}.`,

@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import { query, transaction } from '#server/database/postgres.ts';
+import { bootId } from '#server/runtime/boot-id.ts';
 import { isUuid } from '#shared/validation.ts';
 
 import type { ChatInput, ChatMessage, ChatSource, ChatThread } from '../assistant.types';
@@ -12,6 +13,22 @@ export async function threads(userId: string) {
       [userId]
     )
   ).rows;
+}
+export async function renameThread(userId: string, threadId: string, title: string) {
+  if (!isUuid(threadId)) error(404, 'Чат не найден.');
+  const result = await query(
+    'UPDATE assistant_threads SET title=$3 WHERE id=$1 AND user_id=$2',
+    [threadId, userId, title]
+  );
+  if (!result.rowCount) error(404, 'Чат не найден.');
+}
+export async function deleteThread(userId: string, threadId: string) {
+  if (!isUuid(threadId)) error(404, 'Чат не найден.');
+  const result = await query('DELETE FROM assistant_threads WHERE id=$1 AND user_id=$2', [
+    threadId,
+    userId
+  ]);
+  if (!result.rowCount) error(404, 'Чат не найден.');
 }
 export async function messages(userId: string, threadId: string) {
   if (!isUuid(threadId)) error(404, 'Чат не найден.');
@@ -30,7 +47,14 @@ export async function messages(userId: string, threadId: string) {
 export async function beginTurn(userId: string, input: ChatInput) {
   return transaction(async (db) => {
     await db.query('SELECT pg_advisory_xact_lock(882705110)');
-    await db.query('DELETE FROM assistant_leases WHERE expires_at<now()');
+    // A lease protects one running generation. Rows from a previous process
+    // (container restart, crash) cannot belong to a live generation any more,
+    // so they are dropped immediately instead of waiting for expires_at and
+    // blocking the user with a misleading 429.
+    await db.query(
+      'DELETE FROM assistant_leases WHERE expires_at<now() OR boot_id IS DISTINCT FROM $1',
+      [bootId]
+    );
     if ((await db.query('SELECT 1 FROM assistant_leases WHERE user_id=$1', [userId])).rowCount)
       error(429, 'Дождитесь ответа на предыдущий вопрос.');
     if (Number((await db.query('SELECT count(*) count FROM assistant_leases')).rows[0].count) >= 2)
@@ -72,8 +96,8 @@ export async function beginTurn(userId: string, input: ChatInput) {
     const token = randomUUID(),
       answerId = randomUUID();
     await db.query(
-      `INSERT INTO assistant_leases(user_id,token,expires_at) VALUES($1,$2,now()+interval '120 seconds')`,
-      [userId, token]
+      `INSERT INTO assistant_leases(user_id,token,expires_at,boot_id) VALUES($1,$2,now()+interval '120 seconds',$3)`,
+      [userId, token, bootId]
     );
     // An expired generation may have been interrupted by a server restart.
     await db.query(

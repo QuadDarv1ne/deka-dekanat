@@ -6,6 +6,7 @@ import type { User } from '#modules/auth/auth.types.ts';
 import type { GradeInput, LessonInput } from '../academic-management.types.ts';
 import { academicEditor } from './academic-management.repository.server.ts';
 import { isUuid } from '#shared/validation.ts';
+import { foldText } from '#shared/text-fold.ts';
 
 export async function lockAcademics(db: PoolClient) {
   await db.query('SELECT pg_advisory_xact_lock(882705104)');
@@ -40,7 +41,7 @@ export async function saveLessonInTransaction(db: PoolClient, user: User, row: L
     oldGroup = old.rows[0].group_id;
   }
   const overlap = await db.query(
-    `SELECT 1 FROM lessons WHERE cancelled_at IS NULL AND starts_at<$2 AND ends_at>$1 AND ($3::uuid IS NULL OR id<>$3) AND (group_id=$4 OR teacher_id=$5 OR lower(room)=lower($6)) LIMIT 1`,
+    `SELECT 1 FROM lessons WHERE cancelled_at IS NULL AND starts_at<$2 AND ends_at>$1 AND ($3::uuid IS NULL OR id<>$3) AND (group_id=$4 OR teacher_id=$5 OR ${foldText('room')}=${foldText('$6')}) LIMIT 1`,
     [row.starts_at, row.ends_at, row.id ?? null, row.group_id, row.teacher_id, row.room]
   );
   if (overlap.rowCount) error(409, 'В это время заняты группа, преподаватель или аудитория.');

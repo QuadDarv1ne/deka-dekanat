@@ -14,9 +14,9 @@ export async function lessons(user: User) {
   if (user.role === 'admin') return [];
   return (
     await query<Lesson>(
-      `SELECT l.id,s.name subject,s.color,u.full_name teacher,g.name group_name,l.starts_at,l.ends_at,l.room,l.kind,l.note FROM lessons l
+      `SELECT l.id,s.name subject,s.color,u.full_name teacher,g.name group_name,l.starts_at,l.ends_at,l.room,l.kind,l.note,l.cancelled_at FROM lessons l
     JOIN subjects s ON s.id=l.subject_id JOIN users u ON u.id=l.teacher_id JOIN study_groups g ON g.id=l.group_id
-    WHERE ${scope} AND l.cancelled_at IS NULL AND l.starts_at>=date_trunc('week',now()) AND l.starts_at<now()+interval '30 days' ORDER BY l.starts_at LIMIT 300`,
+    WHERE ${scope} AND l.starts_at>=date_trunc('week', now() AT TIME ZONE 'Europe/Moscow') AT TIME ZONE 'Europe/Moscow' AND l.starts_at<now()+interval '30 days' ORDER BY l.starts_at LIMIT 300`,
       [value]
     )
   ).rows;
