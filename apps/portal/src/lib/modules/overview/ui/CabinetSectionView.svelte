@@ -3,7 +3,7 @@
   import { shortDate, time } from '#shared/formatting.ts';
   import { lessonKinds, scoreName } from '#modules/academics/academic.labels.ts';
   import { attendanceLabels } from '#modules/academics/attendance.labels.ts';
-  import { requestKinds } from '#modules/requests/request.labels.ts';
+  import { requestKinds, requestNumber } from '#modules/requests/request.labels.ts';
   import RequestStatusBadge from '#modules/requests/ui/RequestStatusBadge.svelte';
   import { PASSING_SCORE, fallbackAdvice } from '#modules/study-plan/study-plan.policy.ts';
   import { cabinetSections, type CabinetSection } from '#application/cabinet-navigation.ts';
@@ -224,7 +224,7 @@
           <a class="field" href={'/requests/' + item.id}>
             <span
               ><strong>{requestKinds[item.kind]}</strong><small
-                >№ {item.number} · {shortDate(item.updated_at)}</small
+                >№ {requestNumber(item.number)} · {shortDate(item.updated_at)}</small
               ></span
             >
             <RequestStatusBadge status={item.status} />

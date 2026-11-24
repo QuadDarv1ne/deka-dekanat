@@ -13,5 +13,5 @@ export interface AuditEvent {
   action: string;
   entity_id: string;
   created_at: string;
-  metadata: Record<string, string>;
+  metadata: Record<string, unknown>;
 }

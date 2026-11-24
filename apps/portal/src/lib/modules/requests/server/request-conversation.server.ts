@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { query, transaction } from '#server/database/postgres.ts';
 import type { User } from '#modules/auth/auth.types.ts';
 import { isUuid } from '#shared/validation.ts';
+import { requestNumber } from '../request.labels.ts';
 import { conversationOpen } from '../request.policy.ts';
 import type { RequestMessage, RequestStatus } from '../request.types.ts';
 
@@ -67,7 +68,7 @@ export async function postRequestMessage(
        SELECT gen_random_uuid(),u.id,$1,$2,$3 FROM users u WHERE u.active
          AND (($4='dean' AND u.id=$5) OR ($4='student' AND u.role='dean' AND u.faculty_id=$6))`,
       [
-        `Новое сообщение · Заявление №${request.number}`,
+        `Новое сообщение · Заявление №${requestNumber(request.number)}`,
         user.role === 'dean' ? 'Ответ деканата в заявлении.' : 'Студент дополнил заявление.',
         `/requests/${requestId}#request-conversation`,
         user.role,

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '#shared/ui/Icon.svelte';
   import Status from '#modules/requests/ui/RequestStatusBadge.svelte';
-  import { requestKinds } from '#modules/requests/request.labels.ts';
+  import { requestKinds, requestNumber } from '#modules/requests/request.labels.ts';
   import { shortDate } from '#shared/formatting.ts';
   type PageProps = {
     data: {
@@ -25,7 +25,7 @@
         (filter === 'all' ||
           (filter === 'active' && ['new', 'in_progress', 'ready'].includes(r.status)) ||
           filter === r.status) &&
-        `${requestKinds[r.kind]} ${r.number} ${r.student_name} ${r.group_name}`
+        `${requestKinds[r.kind]} ${r.number} ${requestNumber(r.number)} ${r.student_name} ${r.group_name}`
           .toLocaleLowerCase('ru-RU')
           .replaceAll('ё', 'е')
           .includes(search.trim().toLocaleLowerCase('ru-RU').replaceAll('ё', 'е'))
@@ -79,7 +79,7 @@
               ><td
                 ><a href={`/requests/${request.id}`}
                   ><strong>{requestKinds[request.kind]}</strong><small
-                    >№ {String(request.number).padStart(4, '0')}</small
+                    >№ {requestNumber(request.number)}</small
                   ></a
                 ></td
               >{#if data.user.role === 'dean'}<td
@@ -89,7 +89,7 @@
               ><td
                 ><a
                   class="icon-btn"
-                  aria-label={`Открыть заявление №${request.number}`}
+                  aria-label={`Открыть заявление №${requestNumber(request.number)}`}
                   href={`/requests/${request.id}`}><Icon name="arrow" size={17} /></a
                 ></td
               ></tr

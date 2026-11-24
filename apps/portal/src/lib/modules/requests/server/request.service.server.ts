@@ -4,7 +4,7 @@ import { transaction } from '#server/database/postgres.ts';
 import { newToken } from '#server/security/credentials.mjs';
 import { isUuid } from '#shared/validation.ts';
 import { canTransition, canIssueDocument } from '#modules/requests/request.policy.ts';
-import { requestKinds, statusNames } from '#modules/requests/request.labels.ts';
+import { requestKinds, requestNumber, statusNames } from '#modules/requests/request.labels.ts';
 import type { RequestKind, RequestStatus } from '#modules/requests/request.types.ts';
 import type { User } from '#modules/auth/auth.types.ts';
 
@@ -95,7 +95,7 @@ export async function transitionRequest(
         [
           randomUUID(),
           request.student_id,
-          `Заявление №${request.number}: ${statusNames[target].toLowerCase()}`,
+          `Заявление №${requestNumber(request.number)}: ${statusNames[target].toLowerCase()}`,
           note || 'Откройте заявление, чтобы посмотреть подробности.',
           `/requests/${id}`
         ]

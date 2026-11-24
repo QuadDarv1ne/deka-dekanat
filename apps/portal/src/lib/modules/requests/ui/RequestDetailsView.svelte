@@ -8,7 +8,7 @@
     conversationOpen
   } from '#modules/requests/request.policy.ts';
   import RequestConversation from './RequestConversation.svelte';
-  import { requestKinds, statusNames } from '#modules/requests/request.labels.ts';
+  import { requestKinds, requestNumber, statusNames } from '#modules/requests/request.labels.ts';
   import { fullDate, shortDate, time } from '#shared/formatting.ts';
   import type { RequestStatus } from '#modules/requests/request.types.ts';
   type PageProps = {
@@ -39,12 +39,12 @@
   };
 </script>
 
-<svelte:head><title>Заявление №{data.request.number} · Дека</title></svelte:head>
+<svelte:head><title>Заявление №{requestNumber(data.request.number)} · Дека</title></svelte:head>
 <a class="back" href="/requests"><Icon name="left" size={15} />Все заявления</a>
 <div class="page-head">
   <div>
     <div class="row">
-      <span class="eyebrow">Заявление № {String(data.request.number).padStart(4, '0')}</span><Status
+      <span class="eyebrow">Заявление № {requestNumber(data.request.number)}</span><Status
         status={data.request.status}
       />
     </div>

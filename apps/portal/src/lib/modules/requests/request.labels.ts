@@ -7,6 +7,9 @@ export const requestKinds: Record<RequestKind, string> = {
   transfer: 'Перезачёт дисциплины',
   other: 'Другое обращение'
 };
+export function requestNumber(value: number | string) {
+  return String(value).padStart(4, '0');
+}
 export const statusNames: Record<RequestStatus, string> = {
   new: 'Новое',
   in_progress: 'В работе',

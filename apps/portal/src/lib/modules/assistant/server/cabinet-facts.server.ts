@@ -4,7 +4,7 @@ import { studentAttendance } from '#modules/academics/server/attendance.reposito
 import { countAttendance } from '#modules/academics/student-progress.policy.ts';
 import { readyStudentRequests } from '#modules/requests/server/ready-requests.repository.server.ts';
 import { listRequests } from '#modules/requests/server/request.repository.server.ts';
-import { requestKinds, statusNames } from '#modules/requests/request.labels.ts';
+import { requestKinds, requestNumber, statusNames } from '#modules/requests/request.labels.ts';
 import { fullDate, time } from '#shared/formatting.ts';
 import type { ChatSource } from '../assistant.types.ts';
 import { cabinetQuestion } from '../cabinet-question.policy.ts';
@@ -48,7 +48,7 @@ export async function cabinetFact(
   if (kind === 'ready') {
     const ready = await readyStudentRequests(user);
     const lines = ready.items.map(
-      (item) => `${requestKinds[item.kind]}, заявление №${item.number}.`
+      (item) => `${requestKinds[item.kind]}, заявление №${requestNumber(item.number)}.`
     );
     return {
       text: ready.count
@@ -79,7 +79,7 @@ export async function cabinetFact(
           .slice(0, 4)
           .map(
             (item) =>
-              `${requestKinds[item.kind]}, заявление №${item.number}: ${statusNames[item.status]}.`
+              `${requestKinds[item.kind]}, заявление №${requestNumber(item.number)}: ${statusNames[item.status]}.`
           )
       ].join('\n'),
       sources: [{ id: 'requests', title: 'Мои заявления', href: '/requests' }]

@@ -5,7 +5,7 @@
   let { data }: { data: OverviewData & { user: User } } = $props();
   import Status from '#modules/requests/ui/RequestStatusBadge.svelte';
   import { shortDate } from '#shared/formatting.ts';
-  import { requestKinds } from '#modules/requests/request.labels.ts';
+  import { requestKinds, requestNumber } from '#modules/requests/request.labels.ts';
   const dean = $derived(data.user.role === 'dean');
   const student = $derived(data.user.role === 'student');
 </script>
@@ -34,7 +34,7 @@
                   ><div class="row">
                     <span class="file-icon"><Icon name="file" size={17} /></span><span
                       ><strong>{requestKinds[request.kind]}</strong><small
-                        >№ {String(request.number).padStart(4, '0')}</small
+                        >№ {requestNumber(request.number)}</small
                       ></span
                     >
                   </div></a
@@ -45,7 +45,7 @@
                 ><a
                   class="icon-btn"
                   href={`/requests/${request.id}`}
-                  aria-label={`Открыть заявление №${request.number}`}
+                  aria-label={`Открыть заявление №${requestNumber(request.number)}`}
                   ><Icon name="arrow" size={16} /></a
                 ></td
               ></tr

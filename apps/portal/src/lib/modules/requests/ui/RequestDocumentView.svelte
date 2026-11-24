@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '#shared/ui/Icon.svelte';
   import { fullDate } from '#shared/formatting.ts';
-  import { requestKinds } from '#modules/requests/request.labels.ts';
+  import { requestKinds, requestNumber } from '#modules/requests/request.labels.ts';
   type PageProps = {
     data: { request: import('../request.types').StudyRequest; verificationUrl: string; qr: string };
   };
@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head
-  ><title>Документ №{data.request.number} · Дека</title><meta
+  ><title>Документ №{requestNumber(data.request.number)} · Дека</title><meta
     name="robots"
     content="noindex,nofollow"
   /></svelte:head
@@ -31,7 +31,7 @@
     <strong>Дека</strong><span>Цифровой деканат<br />Учебный портал</span>
   </header>
   <div class="document-meta">
-    <span>№ {String(data.request.number).padStart(4, '0')}</span><span
+    <span>№ {requestNumber(data.request.number)}</span><span
       >{fullDate(data.request.updated_at)}</span
     >
   </div>

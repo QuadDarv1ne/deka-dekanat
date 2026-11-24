@@ -1,14 +1,9 @@
 <script lang="ts">
   import Icon from '#shared/ui/Icon.svelte';
   import { shortDate, time } from '#shared/formatting.ts';
-  import { statusNames } from '#modules/requests/request.labels.ts';
-  import type { RequestStatus } from '#modules/requests/request.types.ts';
+  import { auditDetail, auditTitle } from '../audit-detail.policy.ts';
   type PageProps = { data: { events: import('../administration.types').AuditEvent[] } };
   let { data }: PageProps = $props();
-  const names: Record<string, string> = {
-    'request.created': 'Создано заявление',
-    'request.status_changed': 'Изменён статус заявления'
-  };
 </script>
 
 <svelte:head><title>Журнал действий · Дека</title></svelte:head>
@@ -27,10 +22,8 @@
         >{#each data.events as event}<tr
             ><td>{shortDate(event.created_at)}<small>{time(event.created_at)}</small></td><td
               >{event.actor ?? 'Система'}</td
-            ><td>{names[event.action] ?? event.action}</td><td
-              >{#if event.metadata.to}{statusNames[event.metadata.from as RequestStatus]} → {statusNames[
-                  event.metadata.to as RequestStatus
-                ]}{:else}Заявление создано{/if}<small title={event.entity_id}
+            ><td>{auditTitle(event.action)}</td><td
+              >{auditDetail(event.action, event.metadata)}<small title={event.entity_id}
                 >{event.entity_id.slice(0, 8)}…</small
               ></td
             ></tr

@@ -7,6 +7,7 @@
   import OverviewStudentDetails from './OverviewStudentDetails.svelte';
   import type { StudentHome } from '../student-home.types';
   import Icon from '#shared/ui/Icon.svelte';
+  import { academicTerm } from '#shared/formatting.ts';
   type PageProps = {
     data: import('../overview.types').OverviewData &
       import('#application/application.types.ts').ApplicationData & {
@@ -18,6 +19,7 @@
   const firstName = $derived(nameParts[nameParts.length >= 3 ? 1 : 0]);
   const student = $derived(data.user.role === 'student');
   const dean = $derived(data.user.role === 'dean');
+  const term = academicTerm();
   const date = new Intl.DateTimeFormat('ru-RU', {
     weekday: 'long',
     day: 'numeric',
@@ -35,7 +37,7 @@
     </p>
   </div>
   <span class="semester"
-    ><Icon name="calendar" size={14} />Осенний семестр <strong>2026 / 2027</strong></span
+    ><Icon name="calendar" size={14} />{term.season} <strong>{term.years}</strong></span
   >
 </div>
 <div class="stack">

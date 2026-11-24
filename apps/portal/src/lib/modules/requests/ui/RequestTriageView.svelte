@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { requestKinds } from '../request.labels.ts';
+  import { requestKinds, requestNumber } from '../request.labels.ts';
   import { WAITING_DAYS, type RequestTriage } from '../request-triage.types.ts';
   import Status from './RequestStatusBadge.svelte';
 
@@ -49,7 +49,7 @@
           <li>
             <div>
               <a class="link" href={'/requests/' + item.id}>
-                № {item.number} · {requestKinds[item.kind]}
+                № {requestNumber(item.number)} · {requestKinds[item.kind]}
               </a>
               <p>{item.student_name} · {item.group_name}</p>
             </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from '#shared/ui/Icon.svelte';
   import Brand from '#shared/ui/Brand.svelte';
-  import { requestKinds } from '#modules/requests/request.labels.ts';
+  import { requestKinds, requestNumber } from '#modules/requests/request.labels.ts';
   import { fullDate } from '#shared/formatting.ts';
   type PageProps = { data: { document: import('../request.types').DocumentVerification } };
   let { data }: PageProps = $props();
@@ -28,7 +28,7 @@
       </div>
       <div>
         <dt>Номер</dt>
-        <dd>№ {String(data.document.number).padStart(4, '0')}</dd>
+        <dd>№ {requestNumber(data.document.number)}</dd>
       </div>
       <div>
         <dt>Обновлён</dt>
